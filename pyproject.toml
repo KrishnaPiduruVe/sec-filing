@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sec-filing-rag"
+version = "0.1.0"
+description = "Fetch SEC 10-Q filings, build local knowledge graphs, and query them with an LLM."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.12",
+    "langchain>=0.3",
+    "langchain-core>=0.3",
+    "networkx>=3.2",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+google = ["langchain-google-genai>=2.0"]
+openai = ["langchain-openai>=0.2"]
+anthropic = ["langchain-anthropic>=0.3"]
+groq = ["langchain-groq>=0.2"]
+all-providers = [
+    "langchain-google-genai>=2.0",
+    "langchain-openai>=0.2",
+    "langchain-anthropic>=0.3",
+    "langchain-groq>=0.2",
+]
+test = ["pytest>=8.0"]
+
+[tool.setuptools]
+py-modules = [
+    "build_knowledge_graph",
+    "llm_config",
+    "query_graph",
+    "sec_quarterly_filings",
+]
