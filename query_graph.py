@@ -10,7 +10,9 @@ from pathlib import Path
 import networkx as nx
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from llm_config import get_chat_model
+from llm_config import get_chat_model, get_model_identifier
+from token_usage import record_chat_usage, record_embedding_usage
+from vector_store import DEFAULT_VECTOR_ROOT, embedding_settings, open_vector_store
 
 GRAPH_ROOT = Path("knowledge_graphs")
 STOP_WORDS = {
@@ -100,26 +102,83 @@ def rank_triples(
 
 def answer_question(
     question: str,
-    graph: nx.MultiDiGraph,
+    graph: nx.MultiDiGraph | None = None,
     llm=None,
     top_k: int = 12,
+    *,
+    mode: str = "graph",
+    vector_store=None,
+    tickers: Sequence[str] | None = None,
 ) -> str:
-    triples = rank_triples(question, graph, top_k=top_k)
-    model = llm if llm is not None else get_chat_model()
-    context = "\n".join(f"- {triple}" for triple in triples) or "(No relevant triples found.)"
-    response = model.invoke(
-        [
-            SystemMessage(
-                content=(
-                    "Answer the question using only the supplied knowledge-graph "
-                    "triples as factual grounding. If they do not contain the "
-                    "answer, say that the available filing facts are insufficient. "
-                    "Do not add outside facts."
-                )
-            ),
-            HumanMessage(content=f"Relevant triples:\n{context}\n\nQuestion: {question}"),
-        ]
+    if mode not in {"graph", "vector", "hybrid"}:
+        raise ValueError("mode must be 'graph', 'vector', or 'hybrid'.")
+    if top_k <= 0:
+        raise ValueError("top_k must be greater than zero.")
+    if mode in {"graph", "hybrid"} and graph is None:
+        raise ValueError("A knowledge graph is required for graph or hybrid mode.")
+    if mode in {"vector", "hybrid"} and vector_store is None:
+        raise ValueError("A vector store is required for vector or hybrid mode.")
+
+    triples = (
+        rank_triples(question, graph, top_k=top_k)
+        if mode in {"graph", "hybrid"} and graph is not None
+        else []
     )
+    documents = []
+    if mode in {"vector", "hybrid"}:
+        where = None
+        if tickers:
+            normalized_tickers = [ticker.upper() for ticker in tickers]
+            where = (
+                {"ticker": normalized_tickers[0]}
+                if len(normalized_tickers) == 1
+                else {"ticker": {"$in": normalized_tickers}}
+            )
+        documents = vector_store.similarity_search(
+            question,
+            k=top_k,
+            filter=where,
+        )
+        provider, embedding_model, _ = embedding_settings()
+        record_embedding_usage(
+            [question],
+            f"{provider}:{embedding_model}",
+            operation="query_embedding",
+        )
+
+    model = llm if llm is not None else get_chat_model()
+    context_sections = []
+    if mode in {"graph", "hybrid"}:
+        graph_context = "\n".join(f"- {triple}" for triple in triples)
+        context_sections.append(f"Relevant graph triples:\n{graph_context or '(None found.)'}")
+    if mode in {"vector", "hybrid"}:
+        excerpts = []
+        for document in documents:
+            metadata = document.metadata
+            citation = "/".join(
+                str(metadata.get(key, ""))
+                for key in ("ticker", "filing", "chunk_index")
+            )
+            excerpts.append(f"- [{citation}] {document.page_content}")
+        context_sections.append(
+            "Relevant filing excerpts:\n" + ("\n".join(excerpts) or "(None found.)")
+        )
+    context = "\n\n".join(context_sections)
+    messages = [
+        SystemMessage(
+            content=(
+                "Answer the question using only the supplied SEC filing context "
+                "as factual grounding. Cite ticker/filing identifiers when present. "
+                "If the context does not contain the answer, say that the available "
+                "filing facts are insufficient. Do not add outside facts."
+            )
+        ),
+        HumanMessage(
+            content=f"{context}\n\nQuestion: {question}"
+        ),
+    ]
+    response = model.invoke(messages)
+    record_chat_usage("answer", get_model_identifier(), messages, response)
     return str(response.content)
 
 
@@ -175,7 +234,14 @@ def main() -> None:
         ),
     )
     parser.add_argument("--graph-dir", type=Path, default=GRAPH_ROOT)
+    parser.add_argument("--vector-dir", type=Path, default=DEFAULT_VECTOR_ROOT)
     parser.add_argument("--top-k", type=int, default=12)
+    parser.add_argument(
+        "--mode",
+        choices=("graph", "vector", "hybrid"),
+        default="hybrid",
+        help="Retrieval source (default: hybrid graph and filing-vector search)",
+    )
     args = parser.parse_args()
     tickers = (
         [
@@ -187,11 +253,30 @@ def main() -> None:
         if args.tickers
         else None
     )
-    graph = load_graph(args.graph_dir, tickers)
+    graph = (
+        load_graph(args.graph_dir, tickers)
+        if args.mode in {"graph", "hybrid"}
+        else None
+    )
+    vector_store = (
+        open_vector_store(args.vector_dir)
+        if args.mode in {"vector", "hybrid"}
+        else None
+    )
     model = get_chat_model()
 
     if args.question:
-        print(answer_question(" ".join(args.question), graph, model, args.top_k))
+        print(
+            answer_question(
+                " ".join(args.question),
+                graph,
+                model,
+                args.top_k,
+                mode=args.mode,
+                vector_store=vector_store,
+                tickers=tickers,
+            )
+        )
         return
     while True:
         try:
@@ -201,7 +286,17 @@ def main() -> None:
         if question.casefold() in {"exit", "quit"}:
             break
         if question:
-            print(answer_question(question, graph, model, args.top_k))
+            print(
+                answer_question(
+                    question,
+                    graph,
+                    model,
+                    args.top_k,
+                    mode=args.mode,
+                    vector_store=vector_store,
+                    tickers=tickers,
+                )
+            )
 
 
 if __name__ == "__main__":

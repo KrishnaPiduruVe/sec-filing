@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import networkx as nx
 import pytest
 
+import llm_config
+from build_vector_store import build_vector_store
 from build_knowledge_graph import (
     ExtractedEntity,
     ExtractedRelationship,
@@ -14,8 +18,9 @@ from build_knowledge_graph import (
     chunk_text,
     html_to_text,
 )
-from query_graph import load_graph, rank_triples
+from query_graph import answer_question, load_graph, rank_triples
 from sec_quarterly_filings import SecClient, latest_10q, ticker_cik_map
+from token_usage import count_tokens, record_chat_usage, usage_summary
 
 
 def test_ticker_map_pads_cik_and_normalizes_ticker() -> None:
@@ -86,7 +91,14 @@ def test_graph_extraction_creates_typed_relationship_and_query_ranks_it() -> Non
     assert "100 million" in triples[0]
 
 
-def test_build_graphs_persists_graphml_and_can_be_loaded(tmp_path: Path) -> None:
+def test_build_graphs_persists_graphml_and_can_be_loaded(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("TOKEN_USAGE_DB", str(tmp_path / "usage.sqlite3"))
+    monkeypatch.setenv("PRIMARY_MODEL", "TEST")
+    monkeypatch.setenv("TEST_MODEL_NAME", "test-model")
+
     class FakeModel:
         def with_structured_output(self, schema):
             assert schema is ExtractionResult
@@ -187,3 +199,208 @@ def test_sec_client_sends_configured_user_agent_on_each_request(monkeypatch) -> 
         header["User-Agent"] == "Filing Researcher filings@company.org"
         for header in session.headers
     )
+
+
+def test_chat_usage_records_provider_counts(tmp_path: Path, monkeypatch) -> None:
+    database = tmp_path / "usage.sqlite3"
+    monkeypatch.setenv("TOKEN_USAGE_DB", str(database))
+
+    class FakeResponse:
+        content = "A grounded response."
+        usage_metadata = {"input_tokens": 17, "output_tokens": 6}
+
+    record_chat_usage("answer", "test-model", "Question and context", FakeResponse())
+    assert usage_summary(database) == [("answer", 17, 6, 1, 0)]
+
+
+def test_embedding_model_uses_provider_model_and_options_from_environment(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "cohere")
+    monkeypatch.setenv("EMBEDDING_MODEL", "embed-v4.0")
+    monkeypatch.setenv("EMBEDDING_API_KEY", "embedding-key")
+    monkeypatch.setenv("EMBEDDING_OPTIONS", '{"output_dimension": 512}')
+    captured = {}
+    expected_model = object()
+
+    def fake_init_embeddings(model, *, provider, **kwargs):
+        captured.update(model=model, provider=provider, **kwargs)
+        return expected_model
+
+    monkeypatch.setattr(llm_config, "init_embeddings", fake_init_embeddings)
+
+    assert llm_config.get_embedding_model() is expected_model
+    assert captured == {
+        "model": "embed-v4.0",
+        "provider": "cohere",
+        "api_key": "embedding-key",
+        "output_dimension": 512,
+    }
+
+
+def test_google_embedding_adapter_uses_configured_chat_key_and_model(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("PRIMARY_MODEL", "GOOGLE")
+    monkeypatch.setenv("GOOGLE_MODEL_PROVIDER", "google_genai")
+    monkeypatch.setenv("GOOGLE_API_KEY", "google-key")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "google_genai")
+    monkeypatch.setenv("EMBEDDING_MODEL", "models/gemini-embedding-001")
+    monkeypatch.delenv("EMBEDDING_API_KEY", raising=False)
+    monkeypatch.setenv("EMBEDDING_OPTIONS", '{"task_type": "RETRIEVAL_DOCUMENT"}')
+    captured = {}
+    module = ModuleType("langchain_google_genai")
+
+    class FakeGoogleEmbeddings:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    module.GoogleGenerativeAIEmbeddings = FakeGoogleEmbeddings
+    monkeypatch.setitem(sys.modules, "langchain_google_genai", module)
+
+    model = llm_config.get_embedding_model()
+
+    assert isinstance(model, FakeGoogleEmbeddings)
+    assert captured == {
+        "model": "models/gemini-embedding-001",
+        "task_type": "RETRIEVAL_DOCUMENT",
+        "api_key": "google-key",
+    }
+
+
+def test_embedding_settings_use_selected_provider_api_key(monkeypatch) -> None:
+    monkeypatch.setenv("PRIMARY_MODEL", "GOOGLE")
+    monkeypatch.setenv("GOOGLE_MODEL_PROVIDER", "google_genai")
+    monkeypatch.setenv("GOOGLE_API_KEY", "google-chat-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-embedding-key")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.delenv("EMBEDDING_API_KEY", raising=False)
+
+    assert llm_config.get_embedding_settings() == (
+        "openai",
+        "text-embedding-3-small",
+        "openai-embedding-key",
+    )
+
+
+def test_build_vector_store_indexes_text_and_removes_only_stale_ticker_chunks(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    database = tmp_path / "usage.sqlite3"
+    monkeypatch.setenv("TOKEN_USAGE_DB", str(database))
+    filing = tmp_path / "filings" / "AAPL" / "accession" / "primary.htm"
+    filing.parent.mkdir(parents=True)
+    filing.write_text(
+        "<p>Apple quarterly revenue increased.</p><script>hidden</script>",
+        encoding="utf-8",
+    )
+
+    class FakeVectorStore:
+        added = []
+        deleted = []
+
+        def get(self, *, where):
+            assert where == {"ticker": {"$in": ["AAPL"]}}
+            return {"ids": ["AAPL:accession:0", "AAPL:stale:2"]}
+
+        def add_texts(self, *, texts, metadatas, ids):
+            self.added.extend(zip(texts, metadatas, ids))
+
+        def delete(self, *, ids):
+            self.deleted.extend(ids)
+
+    store = FakeVectorStore()
+    monkeypatch.setattr(
+        "build_vector_store.embedding_settings",
+        lambda: ("openai", "text-embedding-3-small", "test-key"),
+    )
+    monkeypatch.setattr(
+        "build_vector_store.open_vector_store",
+        lambda path, *, create: store,
+    )
+
+    count = build_vector_store(
+        ["AAPL"],
+        filing_root=tmp_path / "filings",
+        vector_root=tmp_path / "vectors",
+        chunk_size=18,
+        overlap=4,
+    )
+
+    assert count == len(store.added) > 1
+    assert all("hidden" not in text for text, _, _ in store.added)
+    assert store.added[0][1]["ticker"] == "AAPL"
+    assert store.deleted == ["AAPL:stale:2"]
+    assert usage_summary(database)[0][0] == "embedding"
+
+
+def test_hybrid_answer_retrieves_vector_context_and_records_both_calls(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    database = tmp_path / "usage.sqlite3"
+    monkeypatch.setenv("TOKEN_USAGE_DB", str(database))
+    monkeypatch.setenv("PRIMARY_MODEL", "OPENAI")
+    monkeypatch.setenv("OPENAI_MODEL_NAME", "gpt-4o-mini")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("EMBEDDING_API_KEY", "test-key")
+
+    graph = nx.MultiDiGraph()
+    graph.add_node("company", label="Apple", entity_type="Company")
+    graph.add_node("metric", label="Revenue", entity_type="Metric")
+    graph.add_edge("company", "metric", relation="reported", evidence="Revenue rose.")
+
+    class FakeDocument:
+        page_content = "Revenue increased during the quarter."
+        metadata = {"ticker": "AAPL", "filing": "accession", "chunk_index": 0}
+
+    class FakeVectorStore:
+        filter = None
+
+        def similarity_search(self, question, *, k, filter):
+            assert question == "What was Apple's revenue?"
+            assert k == 4
+            self.filter = filter
+            return [FakeDocument()]
+
+    class FakeModel:
+        def invoke(self, messages):
+            assert "Relevant graph triples" in messages[1].content
+            assert "Relevant filing excerpts" in messages[1].content
+            return type(
+                "Response",
+                (),
+                {
+                    "content": "Revenue increased.",
+                    "usage_metadata": {"input_tokens": 23, "output_tokens": 5},
+                },
+            )()
+
+    vector_store = FakeVectorStore()
+    response = answer_question(
+        "What was Apple's revenue?",
+        graph,
+        FakeModel(),
+        top_k=4,
+        mode="hybrid",
+        vector_store=vector_store,
+        tickers=["AAPL"],
+    )
+    assert response == "Revenue increased."
+    assert vector_store.filter == {"ticker": "AAPL"}
+    assert usage_summary(database) == [
+        ("answer", 23, 5, 1, 0),
+        (
+            "query_embedding",
+            count_tokens(
+                "What was Apple's revenue?",
+                "text-embedding-3-small",
+            ),
+            0,
+            1,
+            1,
+        ),
+    ]

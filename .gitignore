@@ -20,3 +20,5 @@ dist/
 .vscode/
 sec_filings/
 knowledge_graphs/
+chroma_db/
+*.sqlite3

@@ -12,7 +12,8 @@ from bs4 import BeautifulSoup
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from llm_config import get_chat_model
+from llm_config import get_chat_model, get_model_identifier
+from token_usage import record_chat_usage
 
 EntityType = Literal[
     "Company",
@@ -163,12 +164,12 @@ def build_filing_graph(
         "entity and relationship. Do not infer unsupported facts."
     )
     for chunk_number, chunk in enumerate(chunks):
-        result = structured_llm.invoke(
-            [
-                SystemMessage(content=instructions),
-                HumanMessage(content=f"Filing excerpt:\n{chunk}"),
-            ]
-        )
+        messages = [
+            SystemMessage(content=instructions),
+            HumanMessage(content=f"Filing excerpt:\n{chunk}"),
+        ]
+        result = structured_llm.invoke(messages)
+        record_chat_usage("graph_extraction", get_model_identifier(), messages, result)
         if not isinstance(result, ExtractionResult):
             raise TypeError("Structured LLM output did not match ExtractionResult.")
         _add_extraction(
