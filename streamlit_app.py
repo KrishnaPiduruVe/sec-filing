@@ -1,13 +1,18 @@
 """Run: python -m streamlit run streamlit_app.py --server.address 127.0.0.1"""
 import html
+import base64
 import time
 import re
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 import streamlit as st
 
 from sec_web_jobs import JobManager, inventory
 from answer_display import readable_answer, answer_markdown
 
-st.set_page_config(page_title='SEC Filing Workspace', page_icon='📄', layout='wide',
+BRAND_ICON = Path(__file__).resolve().parent / 'assets' / 'capgemini-icon.png'
+
+st.set_page_config(page_title='Corporate Atlas | Company Insights', page_icon=str(BRAND_ICON), layout='wide',
                    initial_sidebar_state='collapsed', menu_items={'Get help': None, 'Report a Bug': None, 'About': None})
 # Streamlit's hosting shortcut is unrelated to this local workflow.
 st.markdown('''<style>
@@ -26,6 +31,10 @@ button, input, label, [data-baseweb="select"], [data-testid="stCaptionContainer"
 }
 [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li {line-height:1.75}
 pre, code {font-family:"Anthropic Mono", "SFMono-Regular", Consolas, monospace !important}
+/* Hide browser-injected Grammarly controls within the application. */
+grammarly-desktop-integration, grammarly-extension,
+grammarly-popups, [data-grammarly-shadow-root],
+[data-grammarly-part] {display:none !important}
 /* Hide Streamlit's app menu, hosting controls, and branding. */
 #MainMenu, [data-testid="stMainMenu"],
 [data-testid="stToolbar"], [data-testid="stToolbarActions"],
@@ -39,11 +48,11 @@ footer, [data-testid="stFooter"] {display:none !important}
 .circle {width:64px;height:64px;border-radius:50%;border:3px solid #cbd5e1;background:#f8fafc;color:#64748b;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px;font-weight:700}
 .stage strong {display:block;font-size:15px}
 .stage small {display:block;margin-top:8px;line-height:1.5;font-size:12px}
-.running .circle {background:#eff6ff;border-color:#2563eb;color:#2563eb;animation:pulse 1.3s infinite}
-.running strong {color:#2563eb}
+.running .circle {background:#fff7ed;border-color:#f97316;color:#c2410c;animation:pulse 1.3s infinite}
+.running strong {color:#f97316}
 .completed .circle {background:#f0fdf4;border-color:#16a34a;color:#15803d}
 .failed .circle,.stopped .circle {background:#fef2f2;border-color:#dc2626;color:#dc2626}
-@keyframes pulse {50% {box-shadow:0 0 0 8px #2563eb20}}
+@keyframes pulse {50% {box-shadow:0 0 0 8px #f9731626}}
 @media(prefers-reduced-motion:reduce){.running .circle{animation:none}}
 </style>''', unsafe_allow_html=True)
 
@@ -56,9 +65,21 @@ def workflow_task_runner():
 runner = workflow_task_runner()
 
 
+def preparation_running():
+    current = runner.snapshot()
+    return bool(current and current['action'] == 'prepare' and current['status'] in {'running', 'stopping'})
+
+
+ui_locked = preparation_running()
+st.session_state.preparation_ui_locked = ui_locked
+
+if st.session_state.get('company_table') and 'Accession' not in st.session_state.company_table[0]:
+    st.session_state.pop('company_table', None)
+
+
 def start(action, **kwargs):
     try:
-        job = runner.start({'action': action, **kwargs})
+        job = JobManager.start(runner, {'action': action, **kwargs})
         if action == 'prepare':
             st.session_state.preparing_tickers = re.split(r'[\s,]+', kwargs['tickers'].strip().upper())
     except (ValueError, RuntimeError) as exc:
@@ -69,24 +90,27 @@ def start(action, **kwargs):
 
 title_column, settings_column = st.columns([12, 1], vertical_alignment='center')
 with title_column:
-    st.title('Insights on publicly traded companies')
-    st.caption('Explore financial performance, business risks, and strategic developments through SEC filings.')
+    icon_data = base64.b64encode(BRAND_ICON.read_bytes()).decode('ascii')
+    st.markdown(f'''<div style="display:flex;align-items:center;gap:14px;margin:0 0 8px;">
+        <img src="data:image/png;base64,{icon_data}" alt="Capgemini" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;">
+        <h1 style="margin:0;padding:0;line-height:1.2;font-size:clamp(1.7rem,4vw,2.75rem);">Corporate Atlas</h1>
+        </div>''', unsafe_allow_html=True)
+    st.caption('Insights on publicly traded companies · Grounded in SEC filings')
 with settings_column:
-    with st.popover('⚙️', help='Research settings'):
+    with st.popover('⚙️', help='Research settings', disabled=ui_locked):
         st.subheader('Settings')
-        mode = st.selectbox('Answer using', ['hybrid', 'graph', 'vector'])
-        top_k = st.number_input('Context items per source', 1, 50, 12)
+        mode = st.selectbox('Answer using', ['hybrid', 'graph', 'vector'], disabled=ui_locked)
+        top_k = st.number_input('Context items per source', 1, 50, 12, disabled=ui_locked)
         with st.expander('Preparation settings'):
-            batch_size = st.number_input('Chunks per batch', 1, 100, 5)
-            batch_delay = st.number_input('Pause between batches (seconds)', 0, 600, 65)
-        st.divider()
-        st.markdown('**Appearance**')
-        appearance = st.selectbox('Theme', ['Light', 'Dark'], index=1)
-        text_size = st.select_slider('Text size', options=['Small', 'Medium', 'Large'], value='Medium')
+            batch_size = st.number_input('Chunks per batch', 1, 100, 5, disabled=ui_locked)
+            batch_delay = st.number_input('Pause between batches (seconds)', 0, 600, 65, disabled=ui_locked)
+
+appearance = 'Dark'
+text_size = 'Medium'
 
 palette = ({'background': '#0e1117', 'surface': '#1b2130', 'text': '#f1f5f9', 'muted': '#b4c0d4', 'border': '#475569'}
            if appearance == 'Dark' else
-           {'background': '#ffffff', 'surface': '#f8fafc', 'text': '#172033', 'muted': '#526174', 'border': '#cbd5e1'})
+           {'background': '#faf9f5', 'surface': '#f3f1e9', 'text': '#141413', 'muted': '#68665f', 'border': '#dedbd1'})
 font_size = {'Small': 14, 'Medium': 16, 'Large': 19}[text_size]
 st.markdown(f"""<style>
 [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{background:{palette['background']}; color:{palette['text']}}}
@@ -119,8 +143,43 @@ st.markdown(f"""<style>
 [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea,
 [data-baseweb="select"] > div {{background:{palette['surface']}; color:{palette['text']}}}
 [data-testid="stTextInput"] input::placeholder, [data-testid="stTextArea"] textarea::placeholder {{color:{palette['muted']}}}
+/* Explicit borders override Streamlit's default input outlines in both themes. */
+[data-testid="stTextArea"] [data-baseweb="textarea"],
+[data-testid="stTextInput"] [data-baseweb="input"] {{
+    border:1px solid {('#64748b' if appearance == 'Dark' else '#d4d0c5')} !important;
+    border-radius:10px !important;
+    transition:border-color .15s ease, box-shadow .15s ease;
+}}
+[data-testid="stTextArea"] [data-baseweb="textarea"]:focus-within,
+[data-testid="stTextInput"] [data-baseweb="input"]:focus-within {{
+    border-color:{('#60a5fa' if appearance == 'Dark' else '#b65b3e')} !important;
+    box-shadow:0 0 0 3px {('#60a5fa26' if appearance == 'Dark' else '#d9775726')} !important;
+}}
+
 [data-testid="stButton"] button[kind="secondary"], [data-testid="stPopover"] button {{background:{palette['surface']}; color:{palette['text']}; border-color:{palette['border']}}}
 </style>""", unsafe_allow_html=True)
+
+
+if appearance == 'Light':
+    st.markdown('''<style>
+    [data-testid="stApp"] {background:#faf9f5;color:#141413}
+    [data-testid="stMarkdownContainer"] {color:#141413}
+    [data-testid="stCaptionContainer"] p {color:#68665f}
+    [data-testid="stForm"] {background:#fffefa;border:1px solid #e8e6dc;border-radius:14px}
+    [data-testid="stTextArea"] [data-baseweb="textarea"],
+    [data-testid="stTextInput"] [data-baseweb="input"],
+    [data-testid="stTextArea"] textarea, [data-testid="stTextInput"] input {background:#fffefa !important;color:#141413 !important}
+    [data-testid="stExpander"] {background:#faf9f5;border-color:#e8e6dc}
+    [data-testid="stExpander"] summary:hover {background:#f0eee6;color:#141413}
+    button[kind="primary"], [data-testid="stBaseButton-primary"] {background:#d97757 !important;border-color:#d97757 !important;color:#141413 !important}
+    button[kind="primary"]:hover:not(:disabled) {background:#cc6b4b !important;border-color:#cc6b4b !important}
+    button[kind="secondary"] {background:#f3f1e9 !important;border-color:#d4d0c5 !important;color:#141413 !important}
+    button[kind="secondary"]:hover:not(:disabled) {background:#e8e6dc !important;border-color:#b0aea5 !important}
+    button:disabled {opacity:.45}
+    [data-testid="stMarkdownContainer"] a {color:#a34f35}
+    [data-testid="stHorizontalBlock"] hr, hr {border-color:#e8e6dc}
+    [data-testid="stPopoverBody"] {background:#faf9f5 !important;box-shadow:0 8px 30px #14141314}
+    </style>''', unsafe_allow_html=True)
 
 
 def workflow(job):
@@ -138,6 +197,10 @@ def workflow(job):
                 st.success(f"Information for {st.session_state[key]} is ready. Ask a question above.")
         return
     st.subheader('Preparing your information')
+    if job['status'] in {'running', 'stopping'}:
+        active_step = next((name for name, step in job['steps'].items() if step['status'] == 'running'), 'download')
+        processing_label = {'download': 'Fetching company filings…', 'graph': 'Building knowledge graphs…', 'vector': 'Preparing searchable filing data…'}[active_step]
+        st.status(processing_label if job['status'] == 'running' else 'Stopping…', state='running', expanded=False)
     labels = {'download': 'Download filings', 'graph': 'Build knowledge graphs', 'vector': 'Build vector store'}
     cards = []
     for number, (name, label) in enumerate(labels.items(), 1):
@@ -152,10 +215,7 @@ def workflow(job):
     if 'We already have' in job['output']:
         st.info(next(line for line in job['output'].splitlines() if line.startswith('We already have')))
     if job['status'] in {'failed', 'stopped'}:
-        st.warning('Preparation ' + job['status'] + '. Completed files are saved; click Download again to finish missing stages.')
-    if job['status'] in {'running', 'stopping'} and st.button('Stop preparation', disabled=job['status'] == 'stopping'):
-        runner.stop()
-        st.rerun(scope='fragment')
+        st.warning('Preparation ' + job['status'] + '. New downloads are cleaned up if preparation cannot finish. Click Download to try again.')
     with st.expander('Preparation details', expanded=job['status'] == 'failed'):
         st.code(job['output'] or 'Starting…', language='text')
 
@@ -163,8 +223,8 @@ def workflow(job):
 st.subheader('What would you like to know?')
 st.caption('Ask across available companies, or mention a company or ticker to focus your question.')
 with st.form('question_form'):
-    question = st.text_area('Your question', placeholder='What are the key risks facing Apple? How do revenue trends compare across companies?', max_chars=5000)
-    ask = st.form_submit_button('Explore insights', type='primary')
+    question = st.text_area('Your question', placeholder='What are the key risks facing Apple? How do revenue trends compare across companies?', max_chars=5000, disabled=ui_locked)
+    ask = st.form_submit_button('Explore insights', type='primary', disabled=ui_locked)
 if ask:
     start('query', question=question, mode=mode, top_k=top_k)
 
@@ -175,7 +235,8 @@ def answer_panel():
     if job and job['action'] == 'query':
         output = job['output'].strip()
         if job['status'] in {'running', 'stopping'}:
-            st.info('Reading your saved information…' if job['status'] == 'running' else 'Stopping…')
+            st.status('Fetching filing insights…' if job['status'] == 'running' else 'Stopping…',
+                      state='running', expanded=False)
             if st.button('Stop task', disabled=job['status'] == 'stopping'):
                 runner.stop()
                 st.rerun(scope='fragment')
@@ -200,6 +261,9 @@ answer_panel()
 
 @st.fragment(run_every='1s')
 def preparation_panel():
+    if preparation_running() != st.session_state.get('preparation_ui_locked', False):
+        # Refresh the controls once on workflow completion, rather than every poll.
+        st.rerun()
     job = runner.snapshot()
     busy = bool(job and job['status'] in {'running', 'stopping'})
     st.divider()
@@ -216,7 +280,7 @@ def preparation_panel():
 preparation_panel()
 
 with st.expander('Usage'):
-    if st.button('View token usage'):
+    if st.button('View token usage', disabled=ui_locked):
         st.session_state.show_token_usage = True
     if st.session_state.get('show_token_usage'):
         from token_usage import usage_summary
@@ -231,17 +295,95 @@ with st.expander('Usage'):
         except Exception as exc:
             st.error(f'Unable to read token usage: {exc}')
 
-with st.expander('Available company information'):
-    if st.button('Show companies'):
-        st.session_state.show_companies = True
-    if st.session_state.get('show_companies'):
-        from company_inventory import company_information
-        try:
-            companies = company_information()
+@st.cache_resource
+def company_loader():
+    return ThreadPoolExecutor(max_workers=1, thread_name_prefix='company-list')
+
+
+def load_companies():
+    from company_inventory import filing_information
+    return filing_information()
+
+
+@st.fragment(run_every='1s')
+def companies_panel():
+    loaded = 'company_table' in st.session_state
+    with st.expander('Available company information', expanded=loaded or 'company_load' in st.session_state):
+        st.caption('View saved companies, downloaded quarters, and index availability.')
+        deletion = runner.snapshot()
+        deleting = bool(deletion and deletion['action'] == 'delete_filings' and deletion['status'] in {'running', 'stopping'})
+        if deleting:
+            st.status('Deleting selected fiscal-quarter downloads…', state='running', expanded=False)
+        elif deletion and deletion['action'] == 'delete_filings':
+            if deletion['status'] == 'completed':
+                if st.session_state.get('handled_company_deletion') != deletion['id']:
+                    st.session_state.handled_company_deletion = deletion['id']
+                    st.session_state.pop('company_table', None)
+                    st.session_state.company_load = company_loader().submit(load_companies)
+                    st.session_state.company_loading_started = True
+                finished_at = deletion.get('finished_at', deletion.get('started', 0) + deletion.get('elapsed', 0))
+                remaining = 5 - (time.time() - finished_at)
+                if remaining > 0:
+                    message = html.escape(deletion['output'].strip()).replace('\n', '<br>')
+                    # Preserve the original expiry across periodic fragment updates.
+                    fade_delay = max(0.0, remaining - 0.7)
+                    st.markdown(f'''<div role="status" style="padding:14px 18px;border-radius:10px;
+                        background:#15803d20;border:1px solid #22c55e;color:inherit;
+                        animation:delete-message-fade .7s ease {fade_delay:.2f}s forwards">{message}</div>
+                        <style>@keyframes delete-message-fade {{to {{opacity:0;visibility:hidden}}}}</style>''',
+                        unsafe_allow_html=True)
+            elif deletion['status'] in {'failed', 'stopped'}:
+                st.error('Deletion ' + deletion['status'] + '. Review details and refresh the company list.')
+                st.code(deletion['output'], language='text')
+
+        future = st.session_state.get('company_load')
+        # Consume completed work before rendering the button so it is enabled again.
+        first_loading_render = st.session_state.pop('company_loading_started', False)
+        if future is not None and future.done() and not first_loading_render:
+            try:
+                st.session_state.company_table = future.result()
+                st.session_state.company_table_revision = st.session_state.get('company_table_revision', 0) + 1
+                st.session_state.pop('company_table_error', None)
+            except Exception as exc:
+                st.session_state.company_table_error = str(exc)
+            st.session_state.pop('company_load', None)
+            future = None
+            loaded = 'company_table' in st.session_state
+        if st.button('Refresh companies' if loaded else 'Show companies',
+                     key='refresh_company_list', disabled=future is not None or deleting or preparation_running()):
+            st.session_state.pop('company_table_error', None)
+            st.session_state.company_load = company_loader().submit(load_companies)
+            st.session_state.company_loading_started = True
+            # Rerender immediately: disable the button and replace the old table.
+            st.rerun()
+        if 'company_load' in st.session_state:
+            st.status('Loading saved companies and filing quarters…', state='running', expanded=False)
+            return
+        if st.session_state.get('company_table_error'):
+            st.error('Unable to load the company list: ' + st.session_state.company_table_error)
+        if 'company_table' in st.session_state:
+            companies = st.session_state.company_table
             if companies:
-                st.dataframe(companies, hide_index=True, use_container_width=True)
+                company_count = len({row['Ticker'] for row in companies})
+                st.caption(f'{company_count} companies · {len(companies)} downloaded filings. Select fiscal-quarter rows to delete.')
+                busy = bool(deletion and deletion['status'] in {'running', 'stopping'})
+                selection_key = f"filing_selection_{st.session_state.get('company_table_revision', 0)}"
+                if busy:
+                    st.dataframe(companies, hide_index=True, use_container_width=True)
+                    selected = []
+                else:
+                    table = st.dataframe(companies, hide_index=True, use_container_width=True,
+                                         on_select='rerun', selection_mode='multi-row', key=selection_key)
+                    selected = [{'ticker': companies[index]['Ticker'], 'accession': companies[index]['Accession']}
+                                for index in table.selection.rows if 0 <= index < len(companies)]
+                if selected:
+                    st.caption('Selected: ' + '; '.join(f"{row['ticker']} / {row['accession']}" for row in selected))
+                st.caption('Deletes only checked downloads and their graph/vector evidence. Other fiscal quarters are preserved.')
+                if st.button(f'Delete selected downloads ({len(selected)})', disabled=busy or not selected, key='delete_filing_button'):
+                    start('delete_filings', selections=selected)
+
             else:
                 st.info('No company information is available yet. Add a company to start your research.')
-        except Exception as exc:
-            st.error(f'Unable to read company information: {exc}')
 
+
+companies_panel()

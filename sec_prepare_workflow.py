@@ -1,6 +1,7 @@
 """Download and prepare selected tickers, reusing existing local artifacts."""
 import argparse
 import json
+import signal
 import sys
 from pathlib import Path
 
@@ -45,7 +46,7 @@ def run_script(script, *args):
     runpy.run_path(str(ROOT / script), run_name='__main__')
 
 
-def prepare(tickers, batch_size=5, batch_delay=65):
+def _prepare(tickers, batch_size=5, batch_delay=65):
     missing = [ticker for ticker in tickers if not html_files(ticker)]
     cached = [ticker for ticker in tickers if ticker not in missing]
     if cached:
@@ -71,10 +72,46 @@ def prepare(tickers, batch_size=5, batch_delay=65):
     print('Your information is ready. Ask a question below.', flush=True)
 
 
+def prepare(tickers, batch_size=5, batch_delay=65):
+    """Remove new downloads and their indexes if this preparation cannot finish."""
+    before = {ticker: {p.name for p in (ROOT / 'sec_filings' / ticker).glob('*') if p.is_dir()}
+              for ticker in tickers}
+    existing_tickers = {ticker for ticker in tickers if (ROOT / 'sec_filings' / ticker).exists()}
+    try:
+        _prepare(tickers, batch_size, batch_delay)
+    except BaseException:
+        print('Preparation did not complete. Cleaning up new downloads and indexed data…', flush=True)
+        for ticker in tickers:
+            new_accessions = {p.name for p in (ROOT / 'sec_filings' / ticker).glob('*') if p.is_dir()} - before[ticker]
+            if not new_accessions:
+                continue
+            try:
+                if ticker not in existing_tickers:
+                    import sec_delete_company
+                    sec_delete_company.ROOT = ROOT
+                    sec_delete_company.delete_company(ticker)
+                else:
+                    import sec_delete_filings
+                    sec_delete_filings.ROOT = ROOT
+                    sec_delete_filings.delete_filings([{'ticker': ticker, 'accession': a} for a in new_accessions])
+            except Exception as cleanup_error:
+                print(f'Cleanup failed for {ticker}: {cleanup_error}. Delete the affected download from Available company information.', flush=True)
+        raise
+
+
+def interrupted(signum, frame):
+    # Allow cleanup to finish if the terminal sends a second interrupt.
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    raise InterruptedError('Preparation interrupted; cleaning up new downloads.')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tickers', nargs='+', required=True)
     parser.add_argument('--batch-size', type=int, default=5)
     parser.add_argument('--batch-delay', type=float, default=65)
     args = parser.parse_args()
+    signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGINT, interrupted)
     prepare(args.tickers, args.batch_size, args.batch_delay)

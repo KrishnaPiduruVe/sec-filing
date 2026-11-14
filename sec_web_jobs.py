@@ -20,6 +20,10 @@ def command_for(data: dict) -> list[str]:
     action = data.get('action')
     if action == 'usage':
         return [sys.executable, '-u', str(ROOT / 'token_usage.py')]
+    if action == 'delete_filings':
+        from sec_delete_filings import validate_selections
+        selections = validate_selections(data.get('selections'))
+        return [sys.executable, '-u', str(ROOT / 'sec_delete_filings.py'), '--selections', json.dumps(selections)]
     if action == 'query':
         mode = data.get('mode', 'hybrid')
         try:
@@ -36,13 +40,13 @@ def command_for(data: dict) -> list[str]:
     if not tickers or len(tickers) > 20 or any(not re.fullmatch(r'[A-Z][A-Z0-9.-]{0,14}', t) for t in tickers):
         raise ValueError('Enter 1–20 valid tickers, separated by commas or spaces.')
     scripts = {'fetch': 'sec_quarterly_filings.py', 'graph': 'build_knowledge_graph.py',
-               'vector': 'build_vector_store_paced.py', 'prepare': 'sec_prepare_workflow.py'}
+               'vector': 'build_vector_store_paced.py', 'prepare': 'sec_prepare_workflow.py', 'delete': 'sec_delete_company.py'}
     if action not in scripts:
         raise ValueError('Unknown action.')
     args = [sys.executable, '-u', str(ROOT / scripts[action])]
     if action == 'fetch':
         return args + tickers
-    if action in {'graph', 'vector', 'prepare'}:
+    if action in {'graph', 'vector', 'prepare', 'delete'}:
         args += ['--tickers', *tickers]
     if action in {'vector', 'prepare'}:
         try:
@@ -119,7 +123,7 @@ class JobManager:
                     # Bound shutdown even if a provider library ignores termination.
                     def force_stop():
                         try:
-                            process.wait(timeout=5)
+                            process.wait(timeout=30 if self.job and self.job['action'] == 'prepare' else 5)
                         except subprocess.TimeoutExpired:
                             process.kill()
                     threading.Thread(target=force_stop, daemon=True).start()
