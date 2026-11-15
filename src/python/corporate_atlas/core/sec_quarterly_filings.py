@@ -7,11 +7,13 @@ import os
 import re
 import time
 from pathlib import Path
+from corporate_atlas.paths import DATA_ROOT
 from typing import Any
 from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
+from corporate_atlas.paths import ENV_FILE
 
 SEC_WWW = "https://www.sec.gov"
 SEC_DATA = "https://data.sec.gov"
@@ -22,7 +24,7 @@ EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
 
 def sec_user_agent() -> str:
     """Return a descriptive SEC User-Agent with a real contact email."""
-    load_dotenv(Path(__file__).with_name(".env"), override=False)
+    load_dotenv(ENV_FILE, override=False)
     user_agent = os.getenv("SEC_USER_AGENT", "").strip()
     if (
         not user_agent
@@ -187,7 +189,7 @@ def fetch_ticker(
 
 def fetch_filings(
     tickers: tuple[str, ...] | list[str] = DEFAULT_TICKERS,
-    output_dir: Path = Path("sec_filings"),
+    output_dir: Path = (DATA_ROOT / "sec_filings"),
 ) -> list[Path]:
     client = SecClient()
     company_tickers = get_json(client, f"{SEC_WWW}/files/company_tickers.json")
@@ -203,7 +205,7 @@ def main() -> None:
         default=list(DEFAULT_TICKERS),
         help="Company tickers to fetch (default: AAPL WFC)",
     )
-    parser.add_argument("--output-dir", type=Path, default=Path("sec_filings"))
+    parser.add_argument("--output-dir", type=Path, default=(DATA_ROOT / "sec_filings"))
     args = parser.parse_args()
     for filing_dir in fetch_filings(args.tickers, args.output_dir):
         print(f"Saved filing to {filing_dir}")

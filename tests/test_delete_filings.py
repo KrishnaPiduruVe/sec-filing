@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import networkx as nx
-import sec_delete_filings as deletion
-import sec_prepare_workflow as workflow
-from sec_web_jobs import command_for
+import corporate_atlas.services.delete_filings as deletion
+import corporate_atlas.services.prepare as workflow
+from corporate_atlas.services.jobs import command_for
 
 
 class FilingDeleteTests(unittest.TestCase):

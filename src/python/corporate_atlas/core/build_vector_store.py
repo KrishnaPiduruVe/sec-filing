@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from corporate_atlas.paths import DATA_ROOT
 
-from build_knowledge_graph import chunk_text, html_to_text
-from token_usage import record_embedding_usage
-from vector_store import DEFAULT_VECTOR_ROOT, embedding_settings, open_vector_store
+from corporate_atlas.core.build_knowledge_graph import chunk_text, html_to_text
+from corporate_atlas.core.token_usage import record_embedding_usage
+from corporate_atlas.core.vector_store import DEFAULT_VECTOR_ROOT, embedding_settings, open_vector_store
 
-FILING_ROOT = Path("sec_filings")
+FILING_ROOT = (DATA_ROOT / "sec_filings")
 DEFAULT_CHUNK_SIZE = 4_000
 DEFAULT_OVERLAP = 400
 

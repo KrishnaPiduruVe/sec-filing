@@ -1,3 +1,0 @@
-# Install with the project's active virtual environment:
-# python -m pip install -r requirements-web.txt
-streamlit>=1.37,<2

@@ -5,7 +5,9 @@ from pathlib import Path
 import re
 import shutil
 
-ROOT = Path(__file__).resolve().parent
+from corporate_atlas.paths import DATA_ROOT
+
+ROOT = DATA_ROOT
 
 
 def validate_selections(selections):

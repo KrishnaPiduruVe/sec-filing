@@ -9,12 +9,13 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
+from corporate_atlas.paths import ENV_FILE
 from langchain.chat_models import init_chat_model
 from langchain.embeddings import init_embeddings
 
 
 def _load_config() -> None:
-    load_dotenv(Path(__file__).with_name(".env"), override=False)
+    load_dotenv(ENV_FILE, override=False)
 
 
 def _primary_model_prefix() -> str:

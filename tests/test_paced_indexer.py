@@ -4,9 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import build_vector_store_paced as indexer
-
-
+import corporate_atlas.core.build_vector_store_paced as indexer
 class PacedIndexerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

@@ -5,7 +5,9 @@ import signal
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+from corporate_atlas.paths import DATA_ROOT
+
+ROOT = DATA_ROOT
 STAGES = ('download', 'graph', 'vector')
 
 
@@ -22,7 +24,7 @@ def vector_complete(ticker):
     """Check actual stored chunk IDs, rather than assuming a directory is ready."""
     if not (ROOT / 'chroma_db').is_dir():
         return False
-    from build_knowledge_graph import html_to_text, chunk_text
+    from corporate_atlas.core.build_knowledge_graph import html_to_text, chunk_text
     import chromadb
     client = chromadb.PersistentClient(path=str(ROOT / 'chroma_db'))
     try:
@@ -40,10 +42,15 @@ def vector_complete(ticker):
 
 def run_script(script, *args):
     # Execute in this process so cancellation also stops the active pipeline stage.
-    # runpy retains the existing scripts and their __main__ entry points unchanged.
-    import runpy
-    sys.argv = [str(ROOT / script), *args]
-    runpy.run_path(str(ROOT / script), run_name='__main__')
+    # Keep the real module identity: Pydantic resolves deferred annotations
+    # through it when the provider generates structured-output schemas.
+    from importlib import import_module
+    previous_argv = sys.argv
+    try:
+        sys.argv = [script, *args]
+        import_module(script).main()
+    finally:
+        sys.argv = previous_argv
 
 
 def _prepare(tickers, batch_size=5, batch_delay=65):
@@ -53,20 +60,20 @@ def _prepare(tickers, batch_size=5, batch_delay=65):
         print(f"We already have downloaded information for {', '.join(cached)}. Reusing it and checking the indexes.", flush=True)
     event('download', 'running', 'Downloading missing filings' if missing else 'Checking saved filings')
     if missing:
-        run_script('sec_quarterly_filings.py', *missing)
+        run_script('corporate_atlas.core.sec_quarterly_filings', *missing)
     event('download', 'completed', 'Filings downloaded' if missing else 'Already downloaded — reused saved filings')
 
     missing_graphs = [t for t in tickers if not (ROOT / 'knowledge_graphs' / f'{t}.graphml').is_file() or not (ROOT / 'knowledge_graphs' / f'{t}.graphml').stat().st_size]
     event('graph', 'running', 'Extracting filing facts' if missing_graphs else 'Checking saved graphs')
     if missing_graphs:
-        run_script('build_knowledge_graph.py', '--tickers', *missing_graphs)
+        run_script('corporate_atlas.core.build_knowledge_graph', '--tickers', *missing_graphs)
     event('graph', 'completed', 'Knowledge graphs ready' if missing_graphs else 'Knowledge graphs already available')
 
     event('vector', 'running', 'Checking saved vectors')
     missing_vectors = [t for t in tickers if not vector_complete(t)]
     if missing_vectors:
         event('vector', 'running', 'Embedding filing chunks in paced batches')
-        run_script('build_vector_store_paced.py', '--tickers', *missing_vectors,
+        run_script('corporate_atlas.core.build_vector_store_paced', '--tickers', *missing_vectors,
                    '--batch-size', str(batch_size), '--batch-delay', str(batch_delay))
     event('vector', 'completed', 'Vector store ready' if missing_vectors else 'Vectors already available')
     print('Your information is ready. Ask a question below.', flush=True)
@@ -87,11 +94,11 @@ def prepare(tickers, batch_size=5, batch_delay=65):
                 continue
             try:
                 if ticker not in existing_tickers:
-                    import sec_delete_company
+                    import corporate_atlas.services.delete_company as sec_delete_company
                     sec_delete_company.ROOT = ROOT
                     sec_delete_company.delete_company(ticker)
                 else:
-                    import sec_delete_filings
+                    import corporate_atlas.services.delete_filings as sec_delete_filings
                     sec_delete_filings.ROOT = ROOT
                     sec_delete_filings.delete_filings([{'ticker': ticker, 'accession': a} for a in new_accessions])
             except Exception as cleanup_error:

@@ -7,9 +7,9 @@ from types import ModuleType
 import networkx as nx
 import pytest
 
-import llm_config
-from build_vector_store import build_vector_store
-from build_knowledge_graph import (
+import corporate_atlas.core.llm_config as llm_config
+from corporate_atlas.core.build_vector_store import build_vector_store
+from corporate_atlas.core.build_knowledge_graph import (
     ExtractedEntity,
     ExtractedRelationship,
     ExtractionResult,
@@ -18,9 +18,9 @@ from build_knowledge_graph import (
     chunk_text,
     html_to_text,
 )
-from query_graph import answer_question, load_graph, rank_triples
-from sec_quarterly_filings import SecClient, latest_10q, ticker_cik_map
-from token_usage import count_tokens, record_chat_usage, usage_summary
+from corporate_atlas.core.query_graph import answer_question, load_graph, rank_triples
+from corporate_atlas.core.sec_quarterly_filings import SecClient, latest_10q, ticker_cik_map
+from corporate_atlas.core.token_usage import count_tokens, record_chat_usage, usage_summary
 
 
 def test_ticker_map_pads_cik_and_normalizes_ticker() -> None:
@@ -313,11 +313,11 @@ def test_build_vector_store_indexes_text_and_removes_only_stale_ticker_chunks(
 
     store = FakeVectorStore()
     monkeypatch.setattr(
-        "build_vector_store.embedding_settings",
+        "corporate_atlas.core.build_vector_store.embedding_settings",
         lambda: ("openai", "text-embedding-3-small", "test-key"),
     )
     monkeypatch.setattr(
-        "build_vector_store.open_vector_store",
+        "corporate_atlas.core.build_vector_store.open_vector_store",
         lambda path, *, create: store,
     )
 

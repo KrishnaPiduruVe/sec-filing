@@ -3,7 +3,9 @@ import argparse
 import re
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+from corporate_atlas.paths import DATA_ROOT
+
+ROOT = DATA_ROOT
 
 
 def mentioned_tickers(question, available, aliases=None):
@@ -24,8 +26,8 @@ def main():
     parser.add_argument('--top-k', type=int, default=12)
     parser.add_argument('question')
     args = parser.parse_args()
-    from query_graph import load_graph, answer_question
-    from vector_store import open_vector_store
+    from corporate_atlas.core.query_graph import load_graph, answer_question
+    from corporate_atlas.core.vector_store import open_vector_store
     graph_paths = list((ROOT / 'knowledge_graphs').glob('*.graphml'))
     graph = load_graph(ROOT / 'knowledge_graphs') if graph_paths and args.mode != 'vector' else None
     store = None

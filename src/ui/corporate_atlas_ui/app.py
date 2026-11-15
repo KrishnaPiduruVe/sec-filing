@@ -1,4 +1,4 @@
-"""Run: python -m streamlit run streamlit_app.py --server.address 127.0.0.1"""
+"""Run: python -m streamlit run src/ui/corporate_atlas_ui/app.py --server.address 127.0.0.1"""
 import html
 import base64
 import time
@@ -7,8 +7,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import streamlit as st
 
-from sec_web_jobs import JobManager, inventory
-from answer_display import readable_answer, answer_markdown
+from corporate_atlas_ui.api_client import AtlasClient, APIError
+from corporate_atlas_ui.answer_display import readable_answer, answer_markdown
 
 BRAND_ICON = Path(__file__).resolve().parent / 'assets' / 'capgemini-icon.png'
 
@@ -58,15 +58,23 @@ footer, [data-testid="stFooter"] {display:none !important}
 
 
 @st.cache_resource
-def workflow_task_runner():
-    return JobManager()
+def backend_client():
+    return AtlasClient()
 
 
-runner = workflow_task_runner()
+runner = backend_client()
+
+
+def backend_snapshot():
+    try:
+        return runner.snapshot()
+    except APIError as exc:
+        st.error(str(exc))
+        st.stop()
 
 
 def preparation_running():
-    current = runner.snapshot()
+    current = backend_snapshot()
     return bool(current and current['action'] == 'prepare' and current['status'] in {'running', 'stopping'})
 
 
@@ -79,7 +87,7 @@ if st.session_state.get('company_table') and 'Accession' not in st.session_state
 
 def start(action, **kwargs):
     try:
-        job = JobManager.start(runner, {'action': action, **kwargs})
+        job = runner.start({'action': action, **kwargs})
         if action == 'prepare':
             st.session_state.preparing_tickers = re.split(r'[\s,]+', kwargs['tickers'].strip().upper())
     except (ValueError, RuntimeError) as exc:
@@ -188,12 +196,11 @@ def workflow(job):
     if job['status'] == 'completed':
         finished = job.get('finished_at', job.get('started', 0) + job.get('elapsed', 0))
         if time.time() - finished < 10:
-            from company_inventory import company_label
             symbols = job.get('tickers') or st.session_state.get('preparing_tickers', [])
             if symbols:
                 key = 'company_labels_' + job['id']
                 if key not in st.session_state:
-                    st.session_state[key] = ', '.join(company_label(t) for t in symbols)
+                    st.session_state[key] = ', '.join(runner.company_label(t) for t in symbols)
                 st.success(f"Information for {st.session_state[key]} is ready. Ask a question above.")
         return
     st.subheader('Preparing your information')
@@ -231,14 +238,14 @@ if ask:
 
 @st.fragment(run_every='1s')
 def answer_panel():
-    job = runner.snapshot()
+    job = backend_snapshot()
     if job and job['action'] == 'query':
         output = job['output'].strip()
         if job['status'] in {'running', 'stopping'}:
             st.status('Fetching filing insights…' if job['status'] == 'running' else 'Stopping…',
                       state='running', expanded=False)
             if st.button('Stop task', disabled=job['status'] == 'stopping'):
-                runner.stop()
+                runner.stop(job['id'])
                 st.rerun(scope='fragment')
         elif job['status'] == 'completed':
             if job['action'] == 'query':
@@ -251,7 +258,11 @@ def answer_panel():
         else:
             st.error('Task ' + job['status'] + '. See details below.')
             st.code(output, language='text')
-    state = inventory()
+    try:
+        state = runner.inventory()
+    except APIError as exc:
+        st.error(str(exc))
+        return
     if not state['env_exists']:
         st.warning('Configure .env before preparing filings or asking questions.')
 
@@ -264,7 +275,7 @@ def preparation_panel():
     if preparation_running() != st.session_state.get('preparation_ui_locked', False):
         # Refresh the controls once on workflow completion, rather than every poll.
         st.rerun()
-    job = runner.snapshot()
+    job = backend_snapshot()
     busy = bool(job and job['status'] in {'running', 'stopping'})
     st.divider()
     with st.expander('Add a company to your research', expanded=bool(job and job['action'] == 'prepare' and busy)):
@@ -283,9 +294,8 @@ with st.expander('Usage'):
     if st.button('View token usage', disabled=ui_locked):
         st.session_state.show_token_usage = True
     if st.session_state.get('show_token_usage'):
-        from token_usage import usage_summary
         try:
-            usage_rows = usage_summary()
+            usage_rows = runner.usage()
             if usage_rows:
                 columns = ['Operation', 'Input tokens', 'Output tokens', 'Events', 'Estimated events']
                 st.dataframe([dict(zip(columns, row)) for row in usage_rows],
@@ -301,8 +311,7 @@ def company_loader():
 
 
 def load_companies():
-    from company_inventory import filing_information
-    return filing_information()
+    return runner.filings()
 
 
 @st.fragment(run_every='1s')
@@ -310,7 +319,7 @@ def companies_panel():
     loaded = 'company_table' in st.session_state
     with st.expander('Available company information', expanded=loaded or 'company_load' in st.session_state):
         st.caption('View saved companies, downloaded quarters, and index availability.')
-        deletion = runner.snapshot()
+        deletion = backend_snapshot()
         deleting = bool(deletion and deletion['action'] == 'delete_filings' and deletion['status'] in {'running', 'stopping'})
         if deleting:
             st.status('Deleting selected fiscal-quarter downloads…', state='running', expanded=False)

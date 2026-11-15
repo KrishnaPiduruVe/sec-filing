@@ -36,13 +36,12 @@ vector = [
 ]
 test = ["pytest>=8.0"]
 
-[tool.setuptools]
-py-modules = [
-    "build_knowledge_graph",
-    "llm_config",
-    "query_graph",
-    "sec_quarterly_filings",
-    "token_usage",
-    "vector_store",
-    "build_vector_store",
-]
+[tool.setuptools.packages.find]
+where = ["src/python", "src/ui"]
+include = ["corporate_atlas*", "corporate_atlas_ui*"]
+
+[tool.setuptools.package-data]
+corporate_atlas_ui = ["assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

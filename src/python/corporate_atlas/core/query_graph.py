@@ -6,15 +6,16 @@ import argparse
 import re
 from collections.abc import Sequence
 from pathlib import Path
+from corporate_atlas.paths import DATA_ROOT
 
 import networkx as nx
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from llm_config import get_chat_model, get_model_identifier
-from token_usage import record_chat_usage, record_embedding_usage
-from vector_store import DEFAULT_VECTOR_ROOT, embedding_settings, open_vector_store
+from corporate_atlas.core.llm_config import get_chat_model, get_model_identifier
+from corporate_atlas.core.token_usage import record_chat_usage, record_embedding_usage
+from corporate_atlas.core.vector_store import DEFAULT_VECTOR_ROOT, embedding_settings, open_vector_store
 
-GRAPH_ROOT = Path("knowledge_graphs")
+GRAPH_ROOT = (DATA_ROOT / "knowledge_graphs")
 STOP_WORDS = {
     "a",
     "about",

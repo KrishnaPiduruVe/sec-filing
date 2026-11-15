@@ -5,7 +5,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from sec_web_jobs import JobManager, command_for
+from corporate_atlas.services.jobs import JobManager, command_for
 
 
 class CommandTests(unittest.TestCase):
@@ -25,7 +25,7 @@ class CommandTests(unittest.TestCase):
 
     def test_uses_paced_indexer(self):
         command = command_for(dict(action='vector', tickers='AAPL'))
-        self.assertTrue(command[2].endswith('build_vector_store_paced.py'))
+        self.assertTrue(command[3].endswith('corporate_atlas.core.build_vector_store_paced'))
         self.assertIn('65.0', command)
 
 
@@ -40,7 +40,7 @@ class JobTests(unittest.TestCase):
 
     def test_output_and_exit_status(self):
         jobs = JobManager()
-        with patch('sec_web_jobs.command_for', return_value=[sys.executable, '-c', 'print("test result")']):
+        with patch('corporate_atlas.services.jobs.command_for', return_value=[sys.executable, '-c', 'print("test result")']):
             jobs.start({'action': 'usage'})
             job = self.wait_finished(jobs)
         self.assertEqual(job['status'], 'completed')
@@ -49,7 +49,7 @@ class JobTests(unittest.TestCase):
 
     def test_stop_and_prevent_concurrent_writes(self):
         jobs = JobManager()
-        with patch('sec_web_jobs.command_for', return_value=[sys.executable, '-c', 'import time; time.sleep(30)']):
+        with patch('corporate_atlas.services.jobs.command_for', return_value=[sys.executable, '-c', 'import time; time.sleep(30)']):
             jobs.start({'action': 'usage'})
             with self.assertRaises(RuntimeError):
                 jobs.start({'action': 'usage'})
@@ -58,7 +58,7 @@ class JobTests(unittest.TestCase):
 
     def test_failure_reports_exit_code(self):
         jobs = JobManager()
-        with patch('sec_web_jobs.command_for', return_value=[sys.executable, '-c', 'raise SystemExit(2)']):
+        with patch('corporate_atlas.services.jobs.command_for', return_value=[sys.executable, '-c', 'raise SystemExit(2)']):
             jobs.start({'action': 'usage'})
             self.assertEqual(self.wait_finished(jobs)['status'], 'failed')
 

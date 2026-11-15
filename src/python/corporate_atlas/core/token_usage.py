@@ -9,16 +9,19 @@ import sqlite3
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
+from corporate_atlas.paths import DATA_ROOT
 from typing import Any
 
 from dotenv import load_dotenv
+from corporate_atlas.paths import ENV_FILE
 
-DEFAULT_DB_PATH = Path("token_usage.sqlite3")
+DEFAULT_DB_PATH = (DATA_ROOT / "token_usage.sqlite3")
 
 
 def _db_path(db_path: Path | None = None) -> Path:
-    load_dotenv(Path(__file__).with_name(".env"), override=False)
-    return db_path or Path(os.getenv("TOKEN_USAGE_DB", str(DEFAULT_DB_PATH)))
+    load_dotenv(ENV_FILE, override=False)
+    path = db_path or Path(os.getenv("TOKEN_USAGE_DB", str(DEFAULT_DB_PATH)))
+    return path if path.is_absolute() else DATA_ROOT / path
 
 
 def count_tokens(text: str, model: str | None = None) -> int:

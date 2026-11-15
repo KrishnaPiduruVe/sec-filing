@@ -12,18 +12,20 @@ import threading
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+from corporate_atlas.paths import DATA_ROOT
+
+ROOT = DATA_ROOT
 
 
 def command_for(data: dict) -> list[str]:
     """Build only allowlisted commands; user input is never passed to a shell."""
     action = data.get('action')
     if action == 'usage':
-        return [sys.executable, '-u', str(ROOT / 'token_usage.py')]
+        return [sys.executable, '-u', '-m', 'corporate_atlas.core.token_usage']
     if action == 'delete_filings':
-        from sec_delete_filings import validate_selections
+        from corporate_atlas.services.delete_filings import validate_selections
         selections = validate_selections(data.get('selections'))
-        return [sys.executable, '-u', str(ROOT / 'sec_delete_filings.py'), '--selections', json.dumps(selections)]
+        return [sys.executable, '-u', '-m', 'corporate_atlas.services.delete_filings', '--selections', json.dumps(selections)]
     if action == 'query':
         mode = data.get('mode', 'hybrid')
         try:
@@ -35,15 +37,15 @@ def command_for(data: dict) -> list[str]:
             raise ValueError('Choose a valid retrieval mode and context count (1–50).')
         if not question or len(question) > 5000:
             raise ValueError('Enter a question of 1–5,000 characters.')
-        return [sys.executable, '-u', str(ROOT / 'sec_query_web.py'), '--mode', mode, '--top-k', str(top_k), '--', question]
+        return [sys.executable, '-u', '-m', 'corporate_atlas.services.query', '--mode', mode, '--top-k', str(top_k), '--', question]
     tickers = list(dict.fromkeys(re.split(r'[\s,]+', str(data.get('tickers', '')).strip().upper())))
     if not tickers or len(tickers) > 20 or any(not re.fullmatch(r'[A-Z][A-Z0-9.-]{0,14}', t) for t in tickers):
         raise ValueError('Enter 1–20 valid tickers, separated by commas or spaces.')
-    scripts = {'fetch': 'sec_quarterly_filings.py', 'graph': 'build_knowledge_graph.py',
-               'vector': 'build_vector_store_paced.py', 'prepare': 'sec_prepare_workflow.py', 'delete': 'sec_delete_company.py'}
+    scripts = {'fetch': 'corporate_atlas.core.sec_quarterly_filings', 'graph': 'corporate_atlas.core.build_knowledge_graph',
+               'vector': 'corporate_atlas.core.build_vector_store_paced', 'prepare': 'corporate_atlas.services.prepare', 'delete': 'corporate_atlas.services.delete_company'}
     if action not in scripts:
         raise ValueError('Unknown action.')
-    args = [sys.executable, '-u', str(ROOT / scripts[action])]
+    args = [sys.executable, '-u', '-m', scripts[action]]
     if action == 'fetch':
         return args + tickers
     if action in {'graph', 'vector', 'prepare', 'delete'}:

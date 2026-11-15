@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from corporate_atlas.paths import DATA_ROOT
 
-from llm_config import get_embedding_model, get_embedding_settings
+from corporate_atlas.core.llm_config import get_embedding_model, get_embedding_settings
 
-DEFAULT_VECTOR_ROOT = Path("chroma_db")
+DEFAULT_VECTOR_ROOT = (DATA_ROOT / "chroma_db")
 COLLECTION_NAME = "sec_filings"
 
 
@@ -35,7 +36,7 @@ def open_vector_store(
     if not create and not persist_directory.is_dir():
         raise FileNotFoundError(
             f"Vector database not found: {persist_directory}. "
-            "Build it first with build_vector_store.py."
+            "Build it first with corporate_atlas.core.build_vector_store."
         )
     try:
         from langchain_chroma import Chroma
@@ -53,6 +54,6 @@ def open_vector_store(
     if not create and not store.get().get("ids"):
         raise ValueError(
             f"Vector database is empty: {persist_directory}. "
-            "Build it first with build_vector_store.py."
+            "Build it first with corporate_atlas.core.build_vector_store."
         )
     return store

@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import networkx as nx
-import sec_delete_company as deletion
-from sec_web_jobs import command_for
+import corporate_atlas.services.delete_company as deletion
+from corporate_atlas.services.jobs import command_for
 
 
 class DeleteCompanyTests(unittest.TestCase):
@@ -40,7 +40,7 @@ class DeleteCompanyTests(unittest.TestCase):
 
     def test_delete_command(self):
         command = command_for({'action': 'delete', 'tickers': 'AAPL'})
-        self.assertTrue(command[2].endswith('sec_delete_company.py'))
+        self.assertTrue(command[3].endswith('corporate_atlas.services.delete_company'))
         self.assertEqual(command[-2:], ['--tickers', 'AAPL'])
 
 

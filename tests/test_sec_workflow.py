@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import sec_prepare_workflow as workflow
-from sec_query_web import mentioned_tickers
+import corporate_atlas.services.prepare as workflow
+from corporate_atlas.services.query import mentioned_tickers
 
 
 class WorkflowTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class WorkflowTests(unittest.TestCase):
     def test_missing_artifacts_run_in_order(self):
         with patch.object(workflow, 'html_files', return_value=[]), patch.object(workflow, 'vector_complete', return_value=False), patch.object(workflow, 'ROOT', Path('/nonexistent/workflow-test')), patch.object(workflow, 'run_script') as run:
             workflow.prepare(['AAPL'])
-            self.assertEqual([c.args[0] for c in run.call_args_list], ['sec_quarterly_filings.py', 'build_knowledge_graph.py', 'build_vector_store_paced.py'])
+            self.assertEqual([c.args[0] for c in run.call_args_list], ['corporate_atlas.core.sec_quarterly_filings', 'corporate_atlas.core.build_knowledge_graph', 'corporate_atlas.core.build_vector_store_paced'])
 
     def test_failure_stops_following_stages(self):
         with patch.object(workflow, 'html_files', return_value=[]), patch.object(workflow, 'run_script', side_effect=RuntimeError('download failed')) as run:

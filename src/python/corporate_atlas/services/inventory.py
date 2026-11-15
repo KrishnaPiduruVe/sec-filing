@@ -3,7 +3,9 @@ from pathlib import Path
 import re
 from functools import lru_cache
 
-ROOT = Path(__file__).resolve().parent
+from corporate_atlas.paths import DATA_ROOT
+
+ROOT = DATA_ROOT
 
 
 @lru_cache(maxsize=256)

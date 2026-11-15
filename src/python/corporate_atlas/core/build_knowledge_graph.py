@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import re
 from pathlib import Path
+from corporate_atlas.paths import DATA_ROOT
 from typing import Literal
 
 import networkx as nx
@@ -12,8 +13,8 @@ from bs4 import BeautifulSoup
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from llm_config import get_chat_model, get_model_identifier
-from token_usage import record_chat_usage
+from corporate_atlas.core.llm_config import get_chat_model, get_model_identifier
+from corporate_atlas.core.token_usage import record_chat_usage
 
 EntityType = Literal[
     "Company",
@@ -25,8 +26,8 @@ EntityType = Literal[
     "Date",
     "Amount",
 ]
-FILING_ROOT = Path("sec_filings")
-GRAPH_ROOT = Path("knowledge_graphs")
+FILING_ROOT = (DATA_ROOT / "sec_filings")
+GRAPH_ROOT = (DATA_ROOT / "knowledge_graphs")
 
 
 class ExtractedEntity(BaseModel):
