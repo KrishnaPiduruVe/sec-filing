@@ -1,4 +1,4 @@
-"""Delete selected ticker/accession downloads and their graph/vector evidence."""
+"""Delete selected ticker/accession downloads and their vector evidence."""
 import argparse
 import json
 from pathlib import Path
@@ -27,46 +27,13 @@ def validate_selections(selections):
     return result
 
 
-def write_graph(graph, path):
-    import networkx as nx
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix('.graphml.tmp')
-    nx.write_graphml(graph, temporary)
-    temporary.replace(path)
-
-
 def delete_filings(selections):
-    import networkx as nx
     selections = validate_selections(selections)
     targets = {(item['ticker'], item['accession']) for item in selections}
     for ticker, accession in targets:
-        for path in (ROOT / 'sec_filings' / ticker, ROOT / 'sec_filings' / ticker / accession,
-                     ROOT / 'knowledge_graphs' / f'{ticker}.graphml'):
+        for path in (ROOT / 'sec_filings' / ticker, ROOT / 'sec_filings' / ticker / accession):
             if path.is_symlink():
                 raise ValueError('Refusing to delete linked company data.')
-    # Preflight graph reads so corrupt graphs fail before any deletion.
-    graphs = {p.stem: nx.read_graphml(p, force_multigraph=True)
-              for p in (ROOT / 'knowledge_graphs').glob('*.graphml') if p.stem != 'combined'}
-    combined_path = ROOT / 'knowledge_graphs' / 'combined.graphml'
-    legacy = nx.read_graphml(combined_path, force_multigraph=True) if not graphs and combined_path.is_file() else None
-
-    def prune(graph, ticker=None):
-        remove = [(u, v, k) for u, v, k, d in graph.edges(keys=True, data=True)
-                  if (str(d.get('ticker', ticker or '')), str(d.get('filing', ''))) in targets]
-        graph.remove_edges_from(remove)
-        graph.remove_nodes_from(list(nx.isolates(graph)))
-        # Node evidence merges multiple quarters in the original graph. Rebuild
-        # it from retained relationships so deleted-quarter quotes cannot linger.
-        for node in graph:
-            evidence = {str(d['evidence']) for _, _, d in list(graph.in_edges(node, data=True)) + list(graph.out_edges(node, data=True)) if d.get('evidence')}
-            graph.nodes[node]['evidence'] = ' | '.join(sorted(evidence))[:5000]
-        return graph
-
-    for ticker in {t for t, _ in targets}:
-        if ticker in graphs:
-            prune(graphs[ticker], ticker)
-    if legacy is not None:
-        prune(legacy)
     if (ROOT / 'chroma_db').is_dir():
         import chromadb
         client = chromadb.PersistentClient(path=str(ROOT / 'chroma_db'))
@@ -84,21 +51,6 @@ def delete_filings(selections):
         parent = folder.parent
         if parent.is_dir() and not any(parent.iterdir()):
             parent.rmdir()
-    for ticker in {t for t, _ in targets}:
-        if ticker in graphs:
-            path = ROOT / 'knowledge_graphs' / f'{ticker}.graphml'
-            remaining_html = [p for p in (ROOT / 'sec_filings' / ticker).glob('*/*') if p.suffix.lower() in {'.htm', '.html'}]
-            if remaining_html or graphs[ticker].number_of_edges():
-                write_graph(graphs[ticker], path)
-            else:
-                path.unlink(missing_ok=True)
-                del graphs[ticker]
-    combined = legacy if legacy is not None else nx.MultiDiGraph()
-    if legacy is None:
-        for graph in graphs.values():
-            combined = nx.compose(combined, graph)
-    if combined_path.exists() or graphs:
-        write_graph(combined, combined_path)
     for ticker, accession in sorted(targets):
         print(f'Deleted {ticker} filing {accession} and its indexed data.', flush=True)
 

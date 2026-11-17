@@ -8,7 +8,7 @@ from pathlib import Path
 from corporate_atlas.paths import DATA_ROOT
 
 ROOT = DATA_ROOT
-STAGES = ('download', 'graph', 'vector')
+STAGES = ('download', 'profile', 'vector')
 
 
 def event(stage, status, message):
@@ -24,7 +24,7 @@ def vector_complete(ticker):
     """Check actual stored chunk IDs, rather than assuming a directory is ready."""
     if not (ROOT / 'chroma_db').is_dir():
         return False
-    from corporate_atlas.core.build_knowledge_graph import html_to_text, chunk_text
+    from corporate_atlas.core.filing_text import html_to_text, chunk_text
     import chromadb
     client = chromadb.PersistentClient(path=str(ROOT / 'chroma_db'))
     try:
@@ -36,14 +36,12 @@ def vector_complete(ticker):
         text = html_to_text(path.read_text(encoding='utf-8', errors='replace'))
         for i, _ in enumerate(chunk_text(text, chunk_size=4000, overlap=400)):
             expected.add(f'{ticker}:{path.parent.name}:{i}')
-    existing = set(collection.get(where={'ticker': ticker}, include=[])['ids'])
+    existing = {item for item in collection.get(where={'ticker': ticker}, include=[])['ids'] if ':public:' not in item}
     return bool(expected) and expected == existing
 
 
 def run_script(script, *args):
     # Execute in this process so cancellation also stops the active pipeline stage.
-    # Keep the real module identity: Pydantic resolves deferred annotations
-    # through it when the provider generates structured-output schemas.
     from importlib import import_module
     previous_argv = sys.argv
     try:
@@ -53,29 +51,65 @@ def run_script(script, *args):
         sys.argv = previous_argv
 
 
+def prepare_public_sources(tickers):
+    """Cache company descriptions and annual facts for the downloaded tickers."""
+    import requests
+    from corporate_atlas.services.research import add_company
+    results = {}
+    for ticker in tickers:
+        try:
+            company = add_company(ticker)
+        except (requests.RequestException, LookupError, ValueError) as exc:
+            print(f'Public company data for {ticker} could not be refreshed: {exc}. SEC filing preparation will continue.', flush=True)
+            continue
+        results[ticker] = company
+        if company.get('profile'):
+            print(f'Wikimedia company profile available for {ticker}.', flush=True)
+        for warning in company.get('warnings', []):
+            print(f'{ticker}: {warning}', flush=True)
+
+    return results
+
+
+class SourceUnavailableError(ValueError):
+    def __init__(self, ticker):
+        self.details = {'tickers':[ticker], 'sources':['SEC EDGAR', 'Wikimedia'],
+                        'message':f'Check the ticker {ticker}. No usable content was found in SEC EDGAR or Wikimedia. The sources may also be temporarily unavailable.'}
+        super().__init__(self.details['message'])
+
+
 def _prepare(tickers, batch_size=5, batch_delay=65):
-    missing = [ticker for ticker in tickers if not html_files(ticker)]
-    cached = [ticker for ticker in tickers if ticker not in missing]
-    if cached:
-        print(f"We already have downloaded information for {', '.join(cached)}. Reusing it and checking the indexes.", flush=True)
-    event('download', 'running', 'Downloading missing filings' if missing else 'Checking saved filings')
-    if missing:
-        run_script('corporate_atlas.core.sec_quarterly_filings', *missing)
-    event('download', 'completed', 'Filings downloaded' if missing else 'Already downloaded — reused saved filings')
-
-    missing_graphs = [t for t in tickers if not (ROOT / 'knowledge_graphs' / f'{t}.graphml').is_file() or not (ROOT / 'knowledge_graphs' / f'{t}.graphml').stat().st_size]
-    event('graph', 'running', 'Extracting filing facts' if missing_graphs else 'Checking saved graphs')
-    if missing_graphs:
-        run_script('corporate_atlas.core.build_knowledge_graph', '--tickers', *missing_graphs)
-    event('graph', 'completed', 'Knowledge graphs ready' if missing_graphs else 'Knowledge graphs already available')
-
-    event('vector', 'running', 'Checking saved vectors')
-    missing_vectors = [t for t in tickers if not vector_complete(t)]
-    if missing_vectors:
-        event('vector', 'running', 'Embedding filing chunks in paced batches')
-        run_script('corporate_atlas.core.build_vector_store_paced', '--tickers', *missing_vectors,
-                   '--batch-size', str(batch_size), '--batch-delay', str(batch_delay))
-    event('vector', 'completed', 'Vector store ready' if missing_vectors else 'Vectors already available')
+    import requests
+    from corporate_atlas.services.company_store import index_snapshot
+    for ticker in tickers:
+        event('download', 'running', f'Checking SEC filings for {ticker}')
+        if not html_files(ticker):
+            try:
+                run_script('corporate_atlas.core.sec_quarterly_filings', ticker)
+            except (LookupError, requests.RequestException) as exc:
+                print(f'{ticker}: SEC filings unavailable: {exc}', flush=True)
+        else:
+            print(f'We already have downloaded information for {ticker}. Reusing saved filings.', flush=True)
+        event('download', 'completed', 'SEC source checked')
+        event('profile', 'running', f'Checking Wikimedia and annual facts for {ticker}')
+        profiles = prepare_public_sources([ticker]) or {}
+        company = profiles.get(ticker)
+        event('profile', 'completed', 'Public company sources checked')
+        has_public = bool(company and ((company.get('profile') or {}).get('summary') or company.get('history')))
+        has_filings = bool(html_files(ticker))
+        ready = vector_complete(ticker)
+        if not (has_public or has_filings or ready):
+            raise SourceUnavailableError(ticker)
+        event('vector', 'running', f'Indexing available content for {ticker}')
+        if has_filings and not ready:
+            run_script('corporate_atlas.core.build_vector_store_paced', '--tickers', ticker,
+                       '--batch-size', str(batch_size), '--batch-delay', str(batch_delay))
+        if has_public:
+            if has_filings and not ready and batch_delay:
+                import time
+                time.sleep(batch_delay)
+            index_snapshot(company)
+        event('vector', 'completed', f'{ticker} content available in Chroma')
     print('Your information is ready. Ask a question below.', flush=True)
 
 
@@ -121,4 +155,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
-    prepare(args.tickers, args.batch_size, args.batch_delay)
+    try:
+        prepare(args.tickers, args.batch_size, args.batch_delay)
+    except SourceUnavailableError as exc:
+        print('SOURCE_UNAVAILABLE ' + json.dumps(exc.details), flush=True)
+        sys.exit(1)

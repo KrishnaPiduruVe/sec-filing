@@ -1,4 +1,4 @@
-"""Background task runner for the local Streamlit SEC filing application."""
+"""Background task runner for the local Corporate Atlas application."""
 from __future__ import annotations
 
 import atexit
@@ -27,28 +27,36 @@ def command_for(data: dict) -> list[str]:
         selections = validate_selections(data.get('selections'))
         return [sys.executable, '-u', '-m', 'corporate_atlas.services.delete_filings', '--selections', json.dumps(selections)]
     if action == 'query':
-        mode = data.get('mode', 'hybrid')
+        mode = data.get('mode', 'vector')
         try:
             top_k = int(data.get('top_k', 12))
         except (ValueError, TypeError):
             raise ValueError('Context count must be an integer.') from None
         question = str(data.get('question', '')).strip()
-        if mode not in {'graph', 'vector', 'hybrid'} or not 1 <= top_k <= 50:
+        if mode != 'vector' or not 1 <= top_k <= 50:
             raise ValueError('Choose a valid retrieval mode and context count (1–50).')
         if not question or len(question) > 5000:
             raise ValueError('Enter a question of 1–5,000 characters.')
+        if data.get('public_context'):
+            from corporate_atlas.services.research import valid_ticker
+            selected = data.get('company_tickers', [])
+            if not isinstance(selected, list) or not 1 <= len(selected) <= 4:
+                raise ValueError('Select between one and four companies.')
+            selected = [valid_ticker(str(ticker)) for ticker in selected]
+            return [sys.executable, '-u', '-m', 'corporate_atlas.services.research_query', '--tickers', *selected,
+                    '--mode', mode, '--top-k', str(top_k), '--', question]
         return [sys.executable, '-u', '-m', 'corporate_atlas.services.query', '--mode', mode, '--top-k', str(top_k), '--', question]
     tickers = list(dict.fromkeys(re.split(r'[\s,]+', str(data.get('tickers', '')).strip().upper())))
     if not tickers or len(tickers) > 20 or any(not re.fullmatch(r'[A-Z][A-Z0-9.-]{0,14}', t) for t in tickers):
         raise ValueError('Enter 1–20 valid tickers, separated by commas or spaces.')
-    scripts = {'fetch': 'corporate_atlas.core.sec_quarterly_filings', 'graph': 'corporate_atlas.core.build_knowledge_graph',
+    scripts = {'fetch': 'corporate_atlas.core.sec_quarterly_filings',
                'vector': 'corporate_atlas.core.build_vector_store_paced', 'prepare': 'corporate_atlas.services.prepare', 'delete': 'corporate_atlas.services.delete_company'}
     if action not in scripts:
         raise ValueError('Unknown action.')
     args = [sys.executable, '-u', '-m', scripts[action]]
     if action == 'fetch':
         return args + tickers
-    if action in {'graph', 'vector', 'prepare', 'delete'}:
+    if action in {'vector', 'prepare', 'delete'}:
         args += ['--tickers', *tickers]
     if action in {'vector', 'prepare'}:
         try:
@@ -77,7 +85,7 @@ class JobManager:
             self.job = dict(id=secrets.token_hex(8), action=data['action'], status='running',
                             output='', started=time.time(), elapsed=0, exit_code=None,
                             tickers=re.split(r'[\s,]+', str(data.get('tickers', '')).strip().upper()) if data.get('tickers') else [],
-                            steps={name: {'status': 'pending', 'message': ''} for name in ('download', 'graph', 'vector')})
+                            steps={name: {'status': 'pending', 'message': ''} for name in ('download', 'profile', 'vector')})
             self.process = None
             threading.Thread(target=self._run, args=(args,), daemon=True).start()
             return dict(self.job)
@@ -94,7 +102,9 @@ class JobManager:
             with process.stdout:
                 for line in process.stdout:
                     with self.lock:
-                        if line.startswith('WORKFLOW '):
+                        if line.startswith('SOURCE_UNAVAILABLE '):
+                            self.job['source_error'] = json.loads(line[len('SOURCE_UNAVAILABLE '):])
+                        elif line.startswith('WORKFLOW '):
                             event = json.loads(line[len('WORKFLOW '):])
                             self.job['steps'][event['stage']] = {'status': event['status'], 'message': event['message']}
                         else:
@@ -139,9 +149,9 @@ class JobManager:
 
 
 def inventory():
-    tickers = sorted({p.name for p in (ROOT / 'sec_filings').glob('*') if p.is_dir()})
+    from corporate_atlas.services.company_store import indexed_companies
+    tickers = sorted(indexed_companies())
     return {'tickers': tickers,
             'html_files': sum(1 for p in (ROOT / 'sec_filings').glob('*/*/*') if p.suffix.lower() in {'.htm', '.html'}),
-            'graphs': len([p for p in (ROOT / 'knowledge_graphs').glob('*.graphml') if p.name != 'combined.graphml']),
             'vector_exists': (ROOT / 'chroma_db').is_dir(),
             'env_exists': (ROOT / '.env').is_file()}

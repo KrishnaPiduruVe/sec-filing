@@ -22,3 +22,12 @@ sec_filings/
 knowledge_graphs/
 chroma_db/
 *.sqlite3
+
+# React build and development artifacts
+node_modules/
+.vite/
+coverage/
+
+# Local company research cache and watchlist
+research_cache/
+research_watchlist.json

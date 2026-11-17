@@ -14,13 +14,13 @@ class LauncherTests(unittest.TestCase):
         self.assertIn('http://127.0.0.1:8501', output.getvalue())
 
     def test_conflicting_port_fails_before_launch(self):
-        with patch('sys.argv', ['run_app.py']), patch('corporate_atlas.launcher.port_in_use', side_effect=[True, False]), patch('corporate_atlas.launcher.subprocess.Popen') as spawn, redirect_stderr(io.StringIO()) as output:
+        with patch('sys.argv', ['run_app.py']), patch('corporate_atlas.launcher.port_in_use', return_value=True), patch('corporate_atlas.launcher.already_running', return_value=False), patch('corporate_atlas.launcher.subprocess.Popen') as spawn, redirect_stderr(io.StringIO()) as output:
             with self.assertRaises(SystemExit) as exc:
                 main()
         self.assertEqual(exc.exception.code, 1)
         spawn.assert_not_called()
-        self.assertIn('8000', output.getvalue())
-        self.assertIn('--api-port 8001', output.getvalue())
+        self.assertIn('8501', output.getvalue())
+        self.assertIn('--port 8502', output.getvalue())
 
 
 if __name__ == '__main__':

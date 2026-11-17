@@ -18,7 +18,7 @@ class LayoutTests(unittest.TestCase):
     def test_config_and_data_stay_in_checkout(self):
         self.assertTrue((PROJECT_ROOT / 'pyproject.toml').is_file())
         self.assertEqual(ENV_FILE, PROJECT_ROOT / '.env')
-        self.assertTrue((PROJECT_ROOT / 'src/ui/corporate_atlas_ui/assets/capgemini-icon.png').is_file())
+        self.assertTrue((PROJECT_ROOT / 'src/ui/public/capgemini-icon.png').is_file())
 
     def test_worker_commands_are_importable_modules(self):
         for data in [{'action':'prepare','tickers':'AAPL'}, {'action':'query','question':'Risk?'},
@@ -48,32 +48,6 @@ class LayoutTests(unittest.TestCase):
         execute.assert_called_once_with('corporate_atlas.core.build_vector_store_paced')
         execute.return_value.main.assert_called_once_with()
         self.assertIs(sys.argv, before)
-
-
-    def test_graph_workflow_resolves_pydantic_schema(self):
-        from corporate_atlas.core import build_knowledge_graph as graph_builder
-        from unittest.mock import MagicMock
-        with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder)
-            filing = root / 'filings' / 'AAPL' / '0000320193-26-000020' / 'filing.htm'
-            filing.parent.mkdir(parents=True)
-            filing.write_text('<p>Apple reported revenue.</p>')
-            model = MagicMock()
-            def structured(schema):
-                schema_json = schema.model_json_schema()
-                self.assertIn('ExtractedEntity', schema_json['$defs'])
-                self.assertEqual(schema.__module__, 'corporate_atlas.core.build_knowledge_graph')
-                response = MagicMock()
-                response.invoke.return_value = schema()
-                return response
-            model.with_structured_output.side_effect = structured
-            before = sys.argv
-            with patch.object(graph_builder, 'get_chat_model', return_value=model), patch.object(graph_builder, 'get_model_identifier', return_value='test-model'), patch.object(graph_builder, 'record_chat_usage'):
-                run_script('corporate_atlas.core.build_knowledge_graph', '--tickers', 'AAPL',
-                           '--filing-dir', str(root / 'filings'), '--graph-dir', str(root / 'graphs'))
-            self.assertTrue((root / 'graphs' / 'AAPL.graphml').is_file())
-            model.with_structured_output.assert_called_once()
-            self.assertIs(sys.argv, before)
 
 
 if __name__ == '__main__':

@@ -22,17 +22,15 @@ def mentioned_tickers(question, available, aliases=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--mode', choices=['hybrid', 'graph', 'vector'], default='hybrid')
+    parser.add_argument('--mode', choices=['vector'], default='vector')
     parser.add_argument('--top-k', type=int, default=12)
     parser.add_argument('question')
     args = parser.parse_args()
-    from corporate_atlas.core.query_graph import load_graph, answer_question
+    from corporate_atlas.core.query_vectors import answer_question
     from corporate_atlas.core.vector_store import open_vector_store
-    graph_paths = list((ROOT / 'knowledge_graphs').glob('*.graphml'))
-    graph = load_graph(ROOT / 'knowledge_graphs') if graph_paths and args.mode != 'vector' else None
     store = None
     vector_tickers = set()
-    if args.mode != 'graph' and (ROOT / 'chroma_db').is_dir():
+    if (ROOT / 'chroma_db').is_dir():
         import chromadb
         client = chromadb.PersistentClient(path=str(ROOT / 'chroma_db'))
         try:
@@ -43,13 +41,10 @@ def main():
             pass
         if vector_tickers:
             store = open_vector_store(ROOT / 'chroma_db')
-    graph_tickers = {p.stem for p in graph_paths if p.stem != 'combined'}
     aliases = {'AAPL': ['Apple'], 'WFC': ['Wells Fargo'], 'MSFT': ['Microsoft'],
                'RIVN': ['Rivian'], 'GOOGL': ['Alphabet'], 'AMZN': ['Amazon'], 'TSLA': ['Tesla']}
-    if graph is not None:
-        graph_tickers.update(str(d['ticker']) for _, d in graph.nodes(data=True) if d.get('ticker'))
     from bs4 import BeautifulSoup
-    for ticker in graph_tickers | vector_tickers:
+    for ticker in vector_tickers:
         for path in (ROOT / 'sec_filings' / ticker).glob('*/*'):
             if path.suffix.lower() not in {'.htm', '.html'}:
                 continue
@@ -59,16 +54,10 @@ def main():
                 name = registrant.get_text(' ', strip=True)
                 if len(name) > 3:
                     aliases.setdefault(ticker, []).append(name)
-    tickers = mentioned_tickers(args.question, graph_tickers | vector_tickers, aliases)
-    if tickers and graph is not None:
-        # Subgraph also handles tickers whose data exists only in the vector store.
-        graph = graph.subgraph([n for n, d in graph.nodes(data=True) if d.get('ticker') in tickers]).copy()
-    mode = args.mode
-    if mode == 'hybrid':
-        mode = 'hybrid' if graph is not None and store is not None else 'graph' if graph is not None else 'vector'
-    if mode == 'graph' and graph is None or mode == 'vector' and store is None:
+    tickers = mentioned_tickers(args.question, vector_tickers, aliases)
+    if store is None:
         raise ValueError('No index is available for this retrieval mode. Download a ticker to prepare it first.')
-    print(answer_question(args.question, graph, top_k=args.top_k, mode=mode, vector_store=store, tickers=tickers))
+    print(answer_question(args.question, top_k=args.top_k, vector_store=store, tickers=tickers))
 
 
 if __name__ == '__main__':

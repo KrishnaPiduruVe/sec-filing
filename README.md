@@ -1,164 +1,109 @@
-# SEC Quarterly Filing Knowledge Graph
+# Corporate Atlas
 
-Fetches the latest 10-Q for each requested ticker from SEC EDGAR, extracts
-filing facts into local NetworkX graphs, and answers questions grounded only
-in retrieved graph triples.
+Research public companies using SEC filings, company profiles, annual financial
+charts, and vector retrieval from Chroma. React provides the interface; FastAPI
+runs background preparation and answer jobs.
 
-## Web application
+## Install and run
 
-Corporate Atlas uses Streamlit for the interface and FastAPI for background jobs
-and data access. After installing the core/provider dependencies and configuring
-`.env` as below:
+Install Python 3.10+ and Node.js 22.12+ with npm. From the project directory:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
+cp .env.example .env
+npm --prefix src/ui ci
+npm --prefix src/ui run build
 python run_app.py
 ```
 
-Open http://127.0.0.1:8501. API documentation: http://127.0.0.1:8000/docs.
-See [UI setup](readme_ui.md) and [API overview](WEB_APP.md) for details.
+On Windows, activate with `.venv\Scripts\Activate.ps1` in PowerShell. Configure
+`.env` before starting: set `SEC_USER_AGENT` to your application name and real
+contact email, choose `PRIMARY_MODEL`, and supply that provider's credentials.
+The provider uses `<PREFIX>_MODEL_PROVIDER`, `<PREFIX>_MODEL_NAME`, and
+`<PREFIX>_API_KEY`. Supported integrations include Google, OpenAI, Anthropic, and
+Groq; install the corresponding project extra if needed.
 
-## Setup
+Embeddings are independent of the answer model: configure `EMBEDDING_PROVIDER`,
+`EMBEDDING_MODEL`, and `EMBEDDING_API_KEY`, with optional `EMBEDDING_OPTIONS` JSON.
+Changing embedding models requires rebuilding the vector index. The default
+requirements include Google, Chroma, OpenAI, and test integrations.
 
-Use Python 3.10 or newer. Install the core dependencies and the integration
-for the provider selected in `.env`:
+Open http://127.0.0.1:8501. API documentation is at `/docs`. Ctrl+C in the launch
+terminal stops the app. Node is needed to build the frontend, not to serve an
+existing build. See [UI setup](readme_ui.md) and [API reference](WEB_APP.md).
 
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-Copy-Item .env.example .env
-```
+## Research and downloads
 
-Set `PRIMARY_MODEL` to one of the configured prefixes and provide that
-provider's API key. Available extras are `google`, `openai`, `anthropic`, and
-`groq`; use `.[all-providers]` to install every integration. Each uses
-`<PREFIX>_MODEL_PROVIDER`, `<PREFIX>_MODEL_NAME`, and `<PREFIX>_API_KEY`.
-`init_chat_model` selects the implementation from the active provider/model
-configuration.
+Chroma is the single source of available companies. No starter or cached-only
+company is shown. The first indexed company is selected on launch. Ticker tabs switch companies;
+**Browse all** opens the company catalog, with filtering.
+The left pane contains company additions, downloads, settings, saved tickers,
+and token usage. Light/dark mode is saved in your browser.
 
-Embedding selection is independent of the chat model and is controlled by
-`EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, and `EMBEDDING_API_KEY` in `.env`.
-`EMBEDDING_PROVIDER` selects the embedding integration independently from the
-chat model. Install the matching provider integration; `.[google,vector]`
-includes the Google GenAI, Chroma, and OpenAI integrations. Google GenAI and
-other providers supported by LangChain can be selected in `.env` without
-changing the query/indexing code. Set optional provider-specific arguments in
-`EMBEDDING_OPTIONS` as a JSON object. If the embedding and chat providers match,
-the configured chat API key can be reused; otherwise set
-`EMBEDDING_API_KEY` or the provider's usual environment-based credentials.
+**Download** accepts a ticker and starts a background preparation job:
 
-Before fetching, replace `SEC_USER_AGENT` in `.env` with an identifying
-application or organization name and a real contact email address. Every SEC
-request sends that User-Agent.
+1. Fetch the latest quarterly filing HTML and available PDF attachments from SEC.
+2. Fetch and cache the Wikimedia company profile and SEC annual financial facts,
+   and index the available source content into Chroma. Source outages show warnings. Either SEC content or a verified Wikimedia
+   profile can be indexed on its own; if neither is usable, a popup asks you to
+   check the ticker and lists SEC EDGAR and Wikimedia.
+3. Split readable HTML into 4,000-character chunks with 400-character overlap,
+   embed them, and persist them in Chroma.
 
-## Fetch filings
+Existing downloads and complete vectors are reused. Vector batches default to
+five chunks with a 65-second pause. On failure or interruption the pipeline
+attempts to clean up newly created downloads and their vectors, preserving old
+data. PDFs are retained as attachments; only HTML is indexed.
 
-```powershell
-python -m corporate_atlas.core.sec_quarterly_filings
-python -m corporate_atlas.core.sec_quarterly_filings AAPL WFC MSFT
-```
+You can switch companies and read charts while preparation runs. A compact
+background status shows progress, and saved tickers update automatically on
+completion. Questions, charts, usage, and company refreshes remain available during a
+download. A separate query job runs against indexed data. Another download is
+disabled until the current preparation finishes.
 
-The primary HTML filing and all PDF files listed in its SEC accession index
-are saved in `sec_filings/<TICKER>/<ACCESSION>/`.
+Answers use semantically retrieved filing excerpts, with filing identifiers as
+citations. Selected-company research also includes cached public profiles and
+annual financial facts. All saved filing evidence is searched unless the
+question names a ticker or company. No relationship database is required.
 
-## Build knowledge graphs
+Wikimedia supplies general company descriptions (CC BY-SA attribution is shown),
+and SEC company facts supply annual USD revenue and net income. Charts show
+reporting periods and source timestamps. Annual fiscal calendars may differ;
+these are historical financial results, not stock-price feeds or forecasts.
+Public profiles and financial snapshots are stored in Chroma. A company can
+appear with only Wikimedia content when SEC filings are unavailable.
 
-```powershell
-python -m corporate_atlas.core.build_knowledge_graph
-python -m corporate_atlas.core.build_knowledge_graph --tickers AAPL WFC
-```
+## Command line
 
-Each HTML filing is converted to text, chunked with overlap, and processed
-using Pydantic structured output (30,000-character chunks with 500-character
-overlap by default). Graphs are written to
-`knowledge_graphs/<TICKER>.graphml` and `knowledge_graphs/combined.graphml`.
-PDF attachments are preserved by the fetcher but are not parsed by the graph
-builder.
-
-## Build the vector index
-
-```powershell
-python -m corporate_atlas.core.build_vector_store
-python -m corporate_atlas.core.build_vector_store --tickers AAPL WFC
-```
-
-This converts each downloaded HTML filing to readable text, splits it into
-overlapping chunks, embeds those chunks, and persists them in `chroma_db/`.
-Rebuilding selected tickers updates their chunks and removes stale chunks
-without replacing other tickers' vectors.
-
-## Query filings
-
-```powershell
-python -m corporate_atlas.core.query_graph "What risks did the company report?"
-python -m corporate_atlas.core.query_graph --ticker AAPL "What was the revenue trend?"
-python -m corporate_atlas.core.query_graph --tickers AAPL,WFC "Compare the reported risks"
-python -m corporate_atlas.core.query_graph --mode graph "What risks did the company report?"
-python -m corporate_atlas.core.query_graph --mode vector "What risks did the company report?"
-python -m corporate_atlas.core.query_graph
-```
-
-The default `hybrid` mode combines ranked graph triples with semantically
-retrieved filing excerpts. `--mode graph` retains the original graph-only
-keyword retrieval, and `--mode vector` searches only Chroma. Use
-`--ticker AAPL` or `--tickers AAPL,WFC` to limit retrieval. Answers are grounded
-only in retrieved filing context and the model is instructed to say when that
-context is insufficient.
-
-## Token usage
-
-Every graph extraction and answer call records input/output token counts in
-`token_usage.sqlite3` (override with `TOKEN_USAGE_DB`). Provider-reported chat
-usage is stored when available; estimated counts are marked as estimated.
-Filing and query embeddings are reported separately; their input usage is
-estimated locally with `tiktoken`, and vector embeddings do not generate output
-tokens. View totals with:
-
-```powershell
+```bash
+python -m corporate_atlas.services.prepare --tickers AAPL MSFT
+python -m corporate_atlas.core.sec_quarterly_filings AAPL MSFT
+python -m corporate_atlas.core.build_vector_store_paced --tickers AAPL --batch-size 5 --batch-delay 65
+python -m corporate_atlas.services.query "What risks did Apple report?"
+python -m corporate_atlas.services.research_query --tickers AAPL -- "Explain its revenue trend."
 python -m corporate_atlas.core.token_usage
 ```
 
-Downloaded filings, generated graphs, virtual environments, and `.env` are
-ignored by Git. Keep API keys and actual contact information in `.env`, not in
-tracked files.
+Token usage includes embedding and answer calls. Usage records are retained when
+company downloads are removed. The API also supports deleting explicit filing
+accessions. Available tickers come from the Chroma collection.
 
-## Project structure
+## Source layout and tests
 
-```text
-src/
-  python/corporate_atlas/
-    api/app.py          # FastAPI application, request models, and endpoints
-    services/           # Jobs, preparation, queries, inventory, and deletion
-    core/               # SEC client, graph extraction, vectors, models, token usage
-    paths.py            # Shared configuration and data paths
-    launcher.py         # Starts the backend and interface
-  ui/corporate_atlas_ui/
-    app.py              # Streamlit page
-    api_client.py       # HTTP client; no backend imports
-    answer_display.py   # Answer formatting
-    assets/             # UI images and branding
-run_app.py              # Thin launcher; python run_app.py still works
-tests/                  # Core, service, API, client, and UI integration tests
-```
-
-The backend and UI are separate Python packages discovered by setuptools.
-Install the checkout with `python -m pip install -r requirements.txt` before
-running it. If updating an existing checkout to this layout, reinstall it with
-`python -m pip install -e . --no-deps` to refresh package discovery.
-
-Run backend commands as modules, for example:
+Python: `src/python/corporate_atlas/` (`api`, `services`, `core`, and bundled data).
+React: `src/ui/src/`. `.env`, `sec_filings/`, `chroma_db/`, and usage records stay
+in the project root. `ATLAS_DATA_DIR` changes the runtime data directory.
 
 ```bash
-python -m corporate_atlas.core.sec_quarterly_filings AAPL
-python -m corporate_atlas.core.build_knowledge_graph --tickers AAPL
-python -m corporate_atlas.core.build_vector_store_paced --tickers AAPL
+python -m pytest -q
+npm --prefix src/ui test
+npm --prefix src/ui run build
 ```
 
-`.env`, `sec_filings/`, `knowledge_graphs/`, `chroma_db/`, and the usage database
-remain at the repository root. Moving source files does not move existing data.
-Paths are resolved independently of the working directory. Set
-`ATLAS_PROJECT_ROOT` to override the configuration/project directory, or
-`ATLAS_DATA_DIR` to store data separately (relative paths resolve under the
-project root). For non-editable package deployments, set `ATLAS_PROJECT_ROOT`
-explicitly to your application configuration directory.
+Keep the application on localhost and run one backend worker per data directory.
+The app has no authentication or multi-user isolation. One preparation and one
+query may run concurrently; deletions remain exclusive. Jobs are held in memory;
+restarting the server clears job history. Avoid separate CLI index writers while
+an API job is active.

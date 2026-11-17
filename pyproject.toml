@@ -5,14 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sec-filing-rag"
 version = "0.1.0"
-description = "Fetch SEC 10-Q filings, build local knowledge graphs, and query them with an LLM."
+description = "Fetch SEC filings and answer questions with vector retrieval."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "beautifulsoup4>=4.12",
     "langchain>=0.3.9",
     "langchain-core>=0.3",
-    "networkx>=3.2",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "requests>=2.31",
@@ -37,11 +36,11 @@ vector = [
 test = ["pytest>=8.0"]
 
 [tool.setuptools.packages.find]
-where = ["src/python", "src/ui"]
-include = ["corporate_atlas*", "corporate_atlas_ui*"]
-
-[tool.setuptools.package-data]
-corporate_atlas_ui = ["assets/*"]
+where = ["src/python"]
+include = ["corporate_atlas*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+corporate_atlas = ["data/*.json"]

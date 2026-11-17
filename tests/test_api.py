@@ -50,9 +50,27 @@ class APITests(unittest.TestCase):
     def test_overlap_rejected_and_cancel_stops_job(self):
         with patch('corporate_atlas.services.jobs.command_for', return_value=[sys.executable, '-c', 'import time; time.sleep(30)']):
             job = self.client.post('/query', json={'question': 'Risk?'}).json()
-            self.assertEqual(self.client.post('/prepare', json={'tickers': 'AAPL'}).status_code, 409)
+            self.assertEqual(self.client.post('/query', json={'question': 'Another risk?'}).status_code, 409)
             self.assertEqual(self.client.post('/jobs/' + job['id'] + '/cancel').status_code, 200)
             self.assertEqual(self.finish(job['id'])['status'], 'stopped')
+
+    def test_query_runs_during_download_and_cancel_does_not_stop_download(self):
+        with patch('corporate_atlas.services.jobs.command_for', return_value=[sys.executable, '-c', 'import time; time.sleep(30)']):
+            download = self.client.post('/prepare', json={'tickers':'AAPL'})
+            self.assertEqual(download.status_code,202)
+            query = self.client.post('/query',json={'question':'Explain available company data'})
+            self.assertEqual(query.status_code,202)
+            self.assertEqual(self.client.post('/prepare',json={'tickers':'IBM'}).status_code,409)
+            state=self.client.get('/jobs/current').json()
+            self.assertEqual(state['job']['id'],download.json()['id'])
+            self.assertEqual(state['query_job']['id'],query.json()['id'])
+            with patch('corporate_atlas.api.app.filing_information',return_value=[]):
+                self.assertEqual(self.client.get('/filings').status_code,200)
+            self.client.post('/jobs/'+query.json()['id']+'/cancel')
+            self.assertEqual(self.finish(query.json()['id'])['status'],'stopped')
+            self.assertEqual(self.client.get('/jobs/'+download.json()['id']).json()['status'],'running')
+            self.client.post('/jobs/'+download.json()['id']+'/cancel')
+            self.assertEqual(self.finish(download.json()['id'])['status'],'stopped')
 
     def test_selected_filings_reach_worker_exactly(self):
         selected = [{'ticker': 'AAPL', 'accession': '0000320193-26-000020'}]

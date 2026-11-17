@@ -1,4 +1,4 @@
-"""Start Corporate Atlas's FastAPI backend and Streamlit UI together."""
+"""Start Corporate Atlas: FastAPI serves the API and compiled React UI together."""
 import argparse
 import os
 from pathlib import Path
@@ -9,26 +9,9 @@ import sys
 import time
 
 import requests
-
 from corporate_atlas.paths import PROJECT_ROOT
-from importlib.resources import files
 
 ROOT = PROJECT_ROOT
-
-
-def wait_for_backend(url, process=None, timeout=20):
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if process is not None and process.poll() is not None:
-            raise RuntimeError('FastAPI exited during startup. See its terminal output above.')
-        try:
-            response = requests.get(url + '/health', timeout=1)
-            if response.ok and response.json().get('application') == 'Corporate Atlas':
-                return
-        except (requests.RequestException, ValueError):
-            pass
-        time.sleep(.2)
-    raise RuntimeError('FastAPI did not become ready. Check the port and terminal output.')
 
 
 def port_in_use(port):
@@ -37,40 +20,36 @@ def port_in_use(port):
         return connection.connect_ex(('127.0.0.1', port)) == 0
 
 
-def already_running(api_url, ui_url):
+def already_running(url):
     try:
-        backend = requests.get(api_url + '/health', timeout=2)
-        frontend = requests.get(ui_url + '/_stcore/health', timeout=2)
+        backend = requests.get(url + '/health', timeout=2)
+        frontend = requests.get(url + '/ui-health', timeout=2)
         return (backend.ok and backend.json().get('application') == 'Corporate Atlas'
-                and frontend.ok and frontend.text.strip() == 'ok')
+                and frontend.ok and frontend.json().get('frontend') == 'react')
     except (requests.RequestException, ValueError):
         return False
 
 
-def wait_for_frontend(url, frontend, backend, timeout=20):
+def wait_for_backend(url, process=None, timeout=20):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if frontend.poll() is not None or backend.poll() is not None:
-            raise RuntimeError('A service exited during startup. Check its output above and port availability.')
-        try:
-            response = requests.get(url + '/_stcore/health', timeout=1)
-            if response.ok and response.text.strip() == 'ok':
-                return
-        except requests.RequestException:
-            pass
+        if process is not None and process.poll() is not None:
+            raise RuntimeError('The server exited during startup. Check its terminal output.')
+        if already_running(url):
+            return
         time.sleep(.2)
-    raise RuntimeError('Streamlit did not become ready. Check its terminal output.')
+    raise RuntimeError('Corporate Atlas did not become ready. Check the React build and terminal output.')
 
 
-def shutdown(process, graceful=False):
+def shutdown(process):
     if process is None or process.poll() is not None:
         return
-    if graceful and os.name != 'nt':
+    if os.name != 'nt':
         process.send_signal(signal.SIGINT)
     else:
         process.terminate()
     try:
-        process.wait(timeout=45 if graceful else 10)
+        process.wait(timeout=45)
     except subprocess.TimeoutExpired:
         process.kill()
         process.wait()
@@ -78,46 +57,36 @@ def shutdown(process, graceful=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--api-port', type=int, default=8000)
-    parser.add_argument('--ui-port', type=int, default=8501)
+    parser.add_argument('--port', '--api-port', '--ui-port', dest='port', type=int, default=8501,
+                        help='Port for both the React interface and API (default: 8501)')
     args = parser.parse_args()
-    if not 1 <= args.api_port <= 65535 or not 1 <= args.ui_port <= 65535 or args.api_port == args.ui_port:
-        parser.error('Choose two distinct ports between 1 and 65535.')
-    url = f'http://127.0.0.1:{args.api_port}'
-    ui_url = f'http://127.0.0.1:{args.ui_port}'
-    occupied = [port for port in (args.api_port, args.ui_port) if port_in_use(port)]
-    if occupied:
-        if len(occupied) == 2 and already_running(url, ui_url):
-            print(f'Corporate Atlas is already running.\nOpen {ui_url}\nAPI documentation: {url}/docs', flush=True)
+    if not 1 <= args.port <= 65535:
+        parser.error('Choose a port between 1 and 65535.')
+    url = f'http://127.0.0.1:{args.port}'
+    if port_in_use(args.port):
+        if already_running(url):
+            print(f'Corporate Atlas is already running.\nOpen {url}\nAPI documentation: {url}/docs', flush=True)
             return
-        parser.exit(1, 'Port(s) already in use: ' + ', '.join(map(str, occupied)) +
-                    '. Stop the existing services or choose unused ports, for example:\n'
-                    'python run_app.py --api-port 8001 --ui-port 8502\n')
-    backend = frontend = None
+        parser.exit(1, f'Port {args.port} is already in use. Stop the old server or run:\npython run_app.py --port {args.port + 1 if args.port < 65535 else 8502}\n')
+    ui = Path(os.getenv('ATLAS_UI_DIST', str(ROOT / 'src/ui/dist')))
+    if not (ui / 'index.html').is_file():
+        parser.exit(1, 'React build is missing. With Node.js installed, run:\nnpm --prefix src/ui ci\nnpm --prefix src/ui run build\nThen run python run_app.py again.\n')
+    server = None
     try:
-        backend = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'corporate_atlas.api.app:app',
-                                    '--host', '127.0.0.1', '--port', str(args.api_port), '--workers', '1'], cwd=ROOT)
-        wait_for_backend(url, backend)
-        env = {**os.environ, 'ATLAS_API_URL': url}
-        frontend = subprocess.Popen([sys.executable, '-m', 'streamlit', 'run', str(files('corporate_atlas_ui') / 'app.py'),
-                                     '--server.address', '127.0.0.1', '--server.port', str(args.ui_port),
-                                     '--server.headless', 'true', '--browser.gatherUsageStats', 'false'], cwd=ROOT, env=env)
-        wait_for_frontend(ui_url, frontend, backend)
-        print(f'Corporate Atlas: http://127.0.0.1:{args.ui_port}\nAPI documentation: {url}/docs\nCtrl+C stops both services.', flush=True)
-        while frontend.poll() is None and backend.poll() is None:
-            time.sleep(.25)
-        if backend.poll() not in (None, 0):
-            raise RuntimeError('FastAPI stopped unexpectedly. See its output above.')
-        if frontend.poll() not in (None, 0):
-            raise RuntimeError('Streamlit stopped unexpectedly. See its output above.')
+        server = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'corporate_atlas.api.app:app',
+                                   '--host', '127.0.0.1', '--port', str(args.port), '--workers', '1'], cwd=ROOT)
+        wait_for_backend(url, server)
+        print(f'Corporate Atlas: {url}\nAPI documentation: {url}/docs\nCtrl+C stops the application.', flush=True)
+        server.wait()
+        if server.returncode:
+            raise RuntimeError('The server stopped unexpectedly. See its output above.')
     except KeyboardInterrupt:
         pass
     except RuntimeError as exc:
         print(f'Unable to run Corporate Atlas: {exc}', file=sys.stderr)
         raise SystemExit(1) from None
     finally:
-        shutdown(frontend)
-        shutdown(backend, graceful=True)
+        shutdown(server)
 
 
 if __name__ == '__main__':

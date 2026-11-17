@@ -1,0 +1,394 @@
+{
+  "AAPL": {
+    "ticker": "AAPL",
+    "name": "Apple",
+    "sector": "Technology",
+    "cik": "0000320193",
+    "wiki": "Apple_Inc.",
+    "color": "#a8b7cf",
+    "tracked": true,
+    "profile": {
+      "title": "Apple Inc.",
+      "description": "American multinational technology company",
+      "summary": "Apple Inc. is an American multinational technology company headquartered in Cupertino, California, in Silicon Valley, and known for consumer electronics, software and online services. Founded in 1976 as Apple Computer Company by Steve Jobs, Steve Wozniak and Ronald Wayne, the company was incorporated by Jobs and Wozniak as Apple Computer, Inc. the following year. Its current name was adopted in 2007 as the company expanded its focus from computers to consumer electronics. Apple is one of the Big Tech companies.",
+      "source_url": "https://en.wikipedia.org/wiki/Apple_Inc.",
+      "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Apple_Inc.",
+      "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+    },
+    "history": [
+      {
+        "year": "2021",
+        "start": "2020-09-27",
+        "end": "2021-09-25",
+        "revenue": 365817000000,
+        "net_income": 94680000000,
+        "net_margin": 25.88179335569424,
+        "filed": "2023-11-03",
+        "accession": "0000320193-23-000106",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2022",
+        "start": "2021-09-26",
+        "end": "2022-09-24",
+        "revenue": 394328000000,
+        "net_income": 99803000000,
+        "net_margin": 25.309640705199733,
+        "filed": "2024-11-01",
+        "accession": "0000320193-24-000123",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2023",
+        "start": "2022-09-25",
+        "end": "2023-09-30",
+        "revenue": 383285000000,
+        "net_income": 96995000000,
+        "net_margin": 25.30623426432028,
+        "filed": "2025-10-31",
+        "accession": "0000320193-25-000079",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2024",
+        "start": "2023-10-01",
+        "end": "2024-09-28",
+        "revenue": 391035000000,
+        "net_income": 93736000000,
+        "net_margin": 23.971255769943866,
+        "filed": "2026-11-03",
+        "accession": "0000320193-26-000026",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2025",
+        "start": "2024-09-29",
+        "end": "2025-09-27",
+        "revenue": 416161000000,
+        "net_income": 112010000000,
+        "net_margin": 26.91506412181824,
+        "filed": "2026-11-03",
+        "accession": "0000320193-26-000026",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2026",
+        "start": "2025-09-28",
+        "end": "2026-09-26",
+        "revenue": 478834000000,
+        "net_income": 132175000000,
+        "net_margin": 27.603511864236875,
+        "filed": "2026-11-03",
+        "accession": "0000320193-26-000026",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      }
+    ],
+    "metrics": {
+      "revenue": 478834000000,
+      "net_income": 132175000000,
+      "net_margin": 27.603511864236875,
+      "revenue_growth": 15.05979656911629,
+      "period_end": "2026-09-26"
+    },
+    "warnings": [],
+    "fetched_at": "2026-11-17T02:15:42.527943+00:00",
+    "snapshot": false,
+    "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+    "financial_fetched_at": "2026-11-17T02:15:42.527943+00:00",
+    "profile_fetched_at": "2026-11-17T02:15:42.527943+00:00"
+  },
+  "MSFT": {
+    "ticker": "MSFT",
+    "name": "Microsoft",
+    "sector": "Technology",
+    "cik": "0000789019",
+    "wiki": "Microsoft",
+    "color": "#65a9ff",
+    "tracked": true,
+    "profile": {
+      "title": "Microsoft",
+      "description": "American multinational technology conglomerate",
+      "summary": "Microsoft Corporation is an American multinational technology conglomerate headquartered in Redmond, Washington. The company became influential in the rise of personal computers through software like Windows and has since expanded into areas such as Internet services, cloud computing, artificial intelligence and video gaming among others. A Big Tech company, Microsoft is the largest software company by revenue, one of the most valuable public companies, and one of the most valuable brands globally.",
+      "source_url": "https://en.wikipedia.org/wiki/Microsoft",
+      "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Microsoft",
+      "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+    },
+    "history": [
+      {
+        "year": "2021",
+        "start": "2020-07-01",
+        "end": "2021-06-30",
+        "revenue": 168088000000,
+        "net_income": 61271000000,
+        "net_margin": 36.451739564989765,
+        "filed": "2023-07-27",
+        "accession": "0000950170-23-035122",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2022",
+        "start": "2021-07-01",
+        "end": "2022-06-30",
+        "revenue": 198270000000,
+        "net_income": 72738000000,
+        "net_margin": 36.68633681343622,
+        "filed": "2024-07-30",
+        "accession": "0000950170-24-087843",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2023",
+        "start": "2022-07-01",
+        "end": "2023-06-30",
+        "revenue": 211915000000,
+        "net_income": 72361000000,
+        "net_margin": 34.14623787839464,
+        "filed": "2025-07-30",
+        "accession": "0000950170-25-100235",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2024",
+        "start": "2023-07-01",
+        "end": "2024-06-30",
+        "revenue": 245122000000,
+        "net_income": 88136000000,
+        "net_margin": 35.955972944084984,
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2025",
+        "start": "2024-07-01",
+        "end": "2025-06-30",
+        "revenue": 281724000000,
+        "net_income": 101832000000,
+        "net_margin": 36.146015248967075,
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2026",
+        "start": "2025-07-01",
+        "end": "2026-06-30",
+        "revenue": 331839000000,
+        "net_income": 133749000000,
+        "net_margin": 40.30538905915218,
+        "filed": "2026-07-29",
+        "accession": "0001193125-26-323660",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      }
+    ],
+    "metrics": {
+      "revenue": 331839000000,
+      "net_income": 133749000000,
+      "net_margin": 40.30538905915218,
+      "revenue_growth": 17.788686799846666,
+      "period_end": "2026-06-30"
+    },
+    "warnings": [],
+    "fetched_at": "2026-11-17T02:15:42.928423+00:00",
+    "snapshot": false,
+    "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+    "financial_fetched_at": "2026-11-17T02:15:42.928423+00:00",
+    "profile_fetched_at": "2026-11-17T02:15:42.928423+00:00"
+  },
+  "NVDA": {
+    "ticker": "NVDA",
+    "name": "NVIDIA",
+    "sector": "Semiconductors",
+    "cik": "0001045810",
+    "wiki": "Nvidia",
+    "color": "#91d579",
+    "tracked": true,
+    "profile": {
+      "title": "Nvidia",
+      "description": "American multinational technology company",
+      "summary": "Nvidia Corporation is an American multinational technology company headquartered in Santa Clara, California. The company develops graphics processing units (GPUs), systems on chips (SoCs), and application programming interfaces (APIs) for gaming, data science, high-performance computing, artificial intelligence (AI) hardware, and mobile and automotive applications. Founded in 1993 by Jensen Huang, Chris Malachowsky, and Curtis Priem, Nvidia is among the largest companies by market capitalization.",
+      "source_url": "https://en.wikipedia.org/wiki/Nvidia",
+      "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Nvidia",
+      "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+    },
+    "history": [
+      {
+        "year": "2021",
+        "start": "2020-01-27",
+        "end": "2021-01-31",
+        "revenue": 16675000000,
+        "net_income": 4332000000,
+        "net_margin": 25.979010494752625,
+        "filed": "2022-03-18",
+        "accession": "0001045810-22-000036",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2022",
+        "start": "2021-02-01",
+        "end": "2022-01-30",
+        "revenue": 26914000000,
+        "net_income": 9752000000,
+        "net_margin": 36.23393029649996,
+        "filed": "2022-03-18",
+        "accession": "0001045810-22-000036",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2023",
+        "start": "2022-01-31",
+        "end": "2023-01-29",
+        "revenue": 26974000000,
+        "net_income": 4368000000,
+        "net_margin": 16.193371394676355,
+        "filed": "2025-02-26",
+        "accession": "0001045810-25-000023",
+        "concept": "Revenues"
+      },
+      {
+        "year": "2024",
+        "start": "2023-01-30",
+        "end": "2024-01-28",
+        "revenue": 60922000000,
+        "net_income": 29760000000,
+        "net_margin": 48.84934834706674,
+        "filed": "2026-02-25",
+        "accession": "0001045810-26-000021",
+        "concept": "Revenues"
+      },
+      {
+        "year": "2025",
+        "start": "2024-01-29",
+        "end": "2025-01-26",
+        "revenue": 130497000000,
+        "net_income": 72880000000,
+        "net_margin": 55.848027157712444,
+        "filed": "2026-02-25",
+        "accession": "0001045810-26-000021",
+        "concept": "Revenues"
+      },
+      {
+        "year": "2026",
+        "start": "2025-01-27",
+        "end": "2026-01-25",
+        "revenue": 215938000000,
+        "net_income": 120067000000,
+        "net_margin": 55.60253406070261,
+        "filed": "2026-02-25",
+        "accession": "0001045810-26-000021",
+        "concept": "Revenues"
+      }
+    ],
+    "metrics": {
+      "revenue": 215938000000,
+      "net_income": 120067000000,
+      "net_margin": 55.60253406070261,
+      "revenue_growth": 65.47353579009479,
+      "period_end": "2026-01-25"
+    },
+    "warnings": [],
+    "fetched_at": "2026-11-17T02:15:43.334629+00:00",
+    "snapshot": false,
+    "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+    "financial_fetched_at": "2026-11-17T02:15:43.334629+00:00",
+    "profile_fetched_at": "2026-11-17T02:15:43.334629+00:00"
+  },
+  "TSLA": {
+    "ticker": "TSLA",
+    "name": "Tesla",
+    "sector": "Automotive",
+    "cik": "0001318605",
+    "wiki": "Tesla,_Inc.",
+    "color": "#e89193",
+    "tracked": true,
+    "profile": {
+      "title": "Tesla, Inc.",
+      "description": "American electric vehicle and clean energy company",
+      "summary": "Tesla, Inc. is an American multinational automotive and clean energy company. Headquartered in Austin, Texas, it designs, manufactures, and sells battery electric vehicles (BEVs), stationary battery energy storage devices from home to grid-scale, solar panels, and related products and services.",
+      "source_url": "https://en.wikipedia.org/wiki/Tesla%2C_Inc.",
+      "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Tesla%2C_Inc.",
+      "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+    },
+    "history": [
+      {
+        "year": "2020",
+        "start": "2020-01-01",
+        "end": "2020-12-31",
+        "revenue": 31536000000,
+        "net_income": 721000000,
+        "net_margin": 2.2862760020294264,
+        "filed": "2023-01-31",
+        "accession": "0000950170-23-001409",
+        "concept": "Revenues"
+      },
+      {
+        "year": "2021",
+        "start": "2021-01-01",
+        "end": "2021-12-31",
+        "revenue": 53823000000,
+        "net_income": 5519000000,
+        "net_margin": 10.253980640246734,
+        "filed": "2024-01-29",
+        "accession": "0001628280-24-002390",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2022",
+        "start": "2022-01-01",
+        "end": "2022-12-31",
+        "revenue": 81462000000,
+        "net_income": 12556000000,
+        "net_margin": 15.413321548697553,
+        "filed": "2025-01-30",
+        "accession": "0001628280-25-003063",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2023",
+        "start": "2023-01-01",
+        "end": "2023-12-31",
+        "revenue": 96773000000,
+        "net_income": 14997000000,
+        "net_margin": 15.497091130790613,
+        "filed": "2026-01-29",
+        "accession": "0001628280-26-003952",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2024",
+        "start": "2024-01-01",
+        "end": "2024-12-31",
+        "revenue": 97690000000,
+        "net_income": 7091000000,
+        "net_margin": 7.2586754017811455,
+        "filed": "2026-01-29",
+        "accession": "0001628280-26-003952",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      },
+      {
+        "year": "2025",
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "revenue": 94827000000,
+        "net_income": 3794000000,
+        "net_margin": 4.000970187815707,
+        "filed": "2026-01-29",
+        "accession": "0001628280-26-003952",
+        "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+      }
+    ],
+    "metrics": {
+      "revenue": 94827000000,
+      "net_income": 3794000000,
+      "net_margin": 4.000970187815707,
+      "revenue_growth": -2.930699150373628,
+      "period_end": "2025-12-31"
+    },
+    "warnings": [],
+    "fetched_at": "2026-11-17T02:15:43.769261+00:00",
+    "snapshot": false,
+    "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001318605.json",
+    "financial_fetched_at": "2026-11-17T02:15:43.769261+00:00",
+    "profile_fetched_at": "2026-11-17T02:15:43.769261+00:00"
+  }
+}

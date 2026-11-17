@@ -37,7 +37,6 @@ def company_information():
             ticker = path.parent.parent.name
             info = path.stat()
             periods.setdefault(ticker, set()).add(filing_period(str(path), info.st_mtime_ns, info.st_size))
-    graphs = {p.stem for p in (ROOT / 'knowledge_graphs').glob('*.graphml') if p.stem != 'combined'}
     vectors = {}
     if (ROOT / 'chroma_db').is_dir():
         import chromadb
@@ -52,9 +51,8 @@ def company_information():
             pass
     return [{'Ticker': ticker, 'Downloaded filings': filings.get(ticker, 0),
              'Downloaded fiscal quarters': '; '.join(sorted(periods.get(ticker, []))) or 'No downloaded filing',
-             'Knowledge graph': 'Available' if ticker in graphs else 'Not built',
              'Vector chunks': vectors.get(ticker, 0)}
-            for ticker in sorted(set(filings) | graphs | set(vectors))]
+            for ticker in sorted(set(filings) | set(vectors))]
 
 
 def company_label(ticker):
@@ -72,7 +70,6 @@ def company_label(ticker):
 
 def filing_information():
     """Return one selectable row per ticker/accession (one downloaded filing)."""
-    import networkx as nx
     rows = {}
     for path in (ROOT / 'sec_filings').glob('*/*/*'):
         if path.is_file() and path.suffix.lower() in {'.htm', '.html'}:
@@ -80,17 +77,9 @@ def filing_information():
             stat = path.stat()
             row = rows.setdefault((ticker, accession), {'Ticker': ticker, 'Fiscal quarter': '',
                                   'Accession': accession, 'Downloaded files': 0,
-                                  'Knowledge graph': 'Not indexed', 'Vector chunks': 0})
+                                  'Vector chunks': 0})
             row['Downloaded files'] += 1
             row['Fiscal quarter'] = filing_period(str(path), stat.st_mtime_ns, stat.st_size)
-    for graph_path in (ROOT / 'knowledge_graphs').glob('*.graphml'):
-        if graph_path.stem == 'combined':
-            continue
-        graph = nx.read_graphml(graph_path, force_multigraph=True)
-        for _, _, data in graph.edges(data=True):
-            key = (graph_path.stem, str(data.get('filing', '')))
-            if key in rows:
-                rows[key]['Knowledge graph'] = 'Available'
     if (ROOT / 'chroma_db').is_dir():
         import chromadb
         client = chromadb.PersistentClient(path=str(ROOT / 'chroma_db'))

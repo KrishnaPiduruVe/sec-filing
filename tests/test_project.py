@@ -4,21 +4,12 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-import networkx as nx
 import pytest
 
 import corporate_atlas.core.llm_config as llm_config
 from corporate_atlas.core.build_vector_store import build_vector_store
-from corporate_atlas.core.build_knowledge_graph import (
-    ExtractedEntity,
-    ExtractedRelationship,
-    ExtractionResult,
-    _add_extraction,
-    build_graphs,
-    chunk_text,
-    html_to_text,
-)
-from corporate_atlas.core.query_graph import answer_question, load_graph, rank_triples
+from corporate_atlas.core.filing_text import chunk_text, html_to_text
+from corporate_atlas.core.query_vectors import answer_question
 from corporate_atlas.core.sec_quarterly_filings import SecClient, latest_10q, ticker_cik_map
 from corporate_atlas.core.token_usage import count_tokens, record_chat_usage, usage_summary
 
@@ -58,118 +49,10 @@ def test_html_to_text_removes_non_visible_script_content() -> None:
     )
 
 
-def test_graph_extraction_creates_typed_relationship_and_query_ranks_it() -> None:
-    graph = nx.MultiDiGraph()
-    result = ExtractionResult(
-        entities=[
-            ExtractedEntity(
-                name="Apple Inc.",
-                entity_type="Company",
-                evidence="Apple reported revenue.",
-            ),
-            ExtractedEntity(
-                name="Revenue",
-                entity_type="Metric",
-                evidence="Revenue was $100 million.",
-            ),
-        ],
-        relationships=[
-            ExtractedRelationship(
-                subject="Apple Inc.",
-                subject_type="Company",
-                predicate="reported",
-                object="Revenue",
-                object_type="Metric",
-                evidence="Apple reported revenue of $100 million.",
-            )
-        ],
-    )
-    _add_extraction(graph, result, "AAPL", "0000320193-25-000001", 0)
-    triples = rank_triples("What revenue did Apple report?", graph)
-    assert len(triples) == 1
-    assert "Apple Inc. [Company] -[reported]-> Revenue [Metric]" in triples[0]
-    assert "100 million" in triples[0]
 
 
-def test_build_graphs_persists_graphml_and_can_be_loaded(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    monkeypatch.setenv("TOKEN_USAGE_DB", str(tmp_path / "usage.sqlite3"))
-    monkeypatch.setenv("PRIMARY_MODEL", "TEST")
-    monkeypatch.setenv("TEST_MODEL_NAME", "test-model")
-
-    class FakeModel:
-        def with_structured_output(self, schema):
-            assert schema is ExtractionResult
-            return self
-
-        def invoke(self, messages):
-            return ExtractionResult(
-                entities=[
-                    ExtractedEntity(
-                        name="Apple Inc.",
-                        entity_type="Company",
-                        evidence="Apple reported revenue.",
-                    ),
-                    ExtractedEntity(
-                        name="Revenue",
-                        entity_type="Metric",
-                        evidence="Revenue was reported.",
-                    ),
-                ],
-                relationships=[
-                    ExtractedRelationship(
-                        subject="Apple Inc.",
-                        subject_type="Company",
-                        predicate="reported",
-                        object="Revenue",
-                        object_type="Metric",
-                        evidence="Apple reported revenue.",
-                    )
-                ],
-            )
-
-    filing = tmp_path / "filings" / "AAPL" / "accession" / "primary.htm"
-    filing.parent.mkdir(parents=True)
-    filing.write_text("<p>Apple reported revenue.</p>", encoding="utf-8")
-    outputs = build_graphs(
-        ["AAPL"],
-        filing_root=tmp_path / "filings",
-        graph_root=tmp_path / "graphs",
-        llm=FakeModel(),
-    )
-    assert outputs["AAPL"].is_file()
-    assert outputs["combined"].is_file()
-    graph = load_graph(tmp_path / "graphs")
-    assert graph.number_of_edges() == 1
-    assert len(rank_triples("Apple revenue", graph)) == 1
 
 
-def test_load_graph_combines_all_ticker_graphs_or_selected_tickers(
-    tmp_path: Path,
-) -> None:
-    for ticker, company, metric in (
-        ("AAPL", "Apple", "revenue"),
-        ("WFC", "Wells Fargo", "credit losses"),
-    ):
-        graph = nx.MultiDiGraph()
-        subject = f"{ticker}|Company|{company.casefold()}"
-        target = f"{ticker}|Metric|{metric}"
-        graph.add_node(subject, ticker=ticker, entity_type="Company", label=company)
-        graph.add_node(target, ticker=ticker, entity_type="Metric", label=metric)
-        graph.add_edge(subject, target, relation="reported", evidence=f"{company} reported {metric}.")
-        nx.write_graphml(graph, tmp_path / f"{ticker}.graphml")
-
-    combined = nx.MultiDiGraph()
-    combined.add_edge("stale", "stale", relation="stale")
-    nx.write_graphml(combined, tmp_path / "combined.graphml")
-
-    all_graphs = load_graph(tmp_path)
-    selected_graphs = load_graph(tmp_path, ["AAPL", "WFC"])
-    assert all_graphs.number_of_edges() == 2
-    assert selected_graphs.number_of_edges() == 2
-    assert len(rank_triples("revenue credit losses", all_graphs)) == 2
 
 
 def test_sec_client_sends_configured_user_agent_on_each_request(monkeypatch) -> None:
@@ -303,7 +186,7 @@ def test_build_vector_store_indexes_text_and_removes_only_stale_ticker_chunks(
 
         def get(self, *, where):
             assert where == {"ticker": {"$in": ["AAPL"]}}
-            return {"ids": ["AAPL:accession:0", "AAPL:stale:2"]}
+            return {"ids": ["AAPL:accession:0", "AAPL:stale:2", "AAPL:public:0"]}
 
         def add_texts(self, *, texts, metadatas, ids):
             self.added.extend(zip(texts, metadatas, ids))
@@ -336,7 +219,7 @@ def test_build_vector_store_indexes_text_and_removes_only_stale_ticker_chunks(
     assert usage_summary(database)[0][0] == "embedding"
 
 
-def test_hybrid_answer_retrieves_vector_context_and_records_both_calls(
+def test_vector_answer_retrieves_vector_context_and_records_both_calls(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -347,11 +230,6 @@ def test_hybrid_answer_retrieves_vector_context_and_records_both_calls(
     monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
     monkeypatch.setenv("EMBEDDING_API_KEY", "test-key")
-
-    graph = nx.MultiDiGraph()
-    graph.add_node("company", label="Apple", entity_type="Company")
-    graph.add_node("metric", label="Revenue", entity_type="Metric")
-    graph.add_edge("company", "metric", relation="reported", evidence="Revenue rose.")
 
     class FakeDocument:
         page_content = "Revenue increased during the quarter."
@@ -368,7 +246,6 @@ def test_hybrid_answer_retrieves_vector_context_and_records_both_calls(
 
     class FakeModel:
         def invoke(self, messages):
-            assert "Relevant graph triples" in messages[1].content
             assert "Relevant filing excerpts" in messages[1].content
             return type(
                 "Response",
@@ -382,10 +259,8 @@ def test_hybrid_answer_retrieves_vector_context_and_records_both_calls(
     vector_store = FakeVectorStore()
     response = answer_question(
         "What was Apple's revenue?",
-        graph,
         FakeModel(),
         top_k=4,
-        mode="hybrid",
         vector_store=vector_store,
         tickers=["AAPL"],
     )

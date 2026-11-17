@@ -1,11 +1,10 @@
-# One installation command for Corporate Atlas:
+# Python dependencies for Corporate Atlas:
 # python -m pip install -r requirements.txt
 # Install the source packages, core dependencies, default Google integration,
 # vector storage, and test tools from pyproject.toml.
 -e .[google,vector,test]
 
-# Web interface and API backend.
-streamlit>=1.37,<2
+# API backend. React dependencies are managed by src/ui/package.json.
 fastapi>=0.115,<1
 uvicorn>=0.30,<1
 httpx>=0.27,<1

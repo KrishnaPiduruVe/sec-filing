@@ -1,1 +1,0 @@
-"""Corporate Atlas application package."""

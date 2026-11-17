@@ -1,0 +1,494 @@
+/* Light palette and sans-serif typography follow the supplied company screens. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --dash-bg: #f7f9fb;
+  --dash-panel: #ffffff;
+  --dash-border: #dce5f0;
+  --dash-text: #101a30;
+  --dash-muted: #566c8e;
+  --surface: #fff;
+  --border: #cbd7e6;
+  --muted: #566c8e;
+  --accent: #5337ff;
+  --light-ink: #101a30;
+  --light-copy: #475b77;
+  --light-muted: #5c7294;
+  --light-violet: #5337ff;
+  color: var(--light-ink);
+  background: var(--dash-bg);
+}
+html[data-theme="light"] .atlas-dashboard,
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    small,
+    button,
+    input,
+    textarea,
+    select,
+    label,
+    summary,
+    th,
+    td,
+    .answer-text,
+    .company-description,
+    .metric-value
+  ) {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-style: normal;
+}
+html[data-theme="light"] .atlas-dashboard {
+  color: var(--light-ink);
+  line-height: 1.65;
+}
+html[data-theme="light"] .atlas-dashboard :is(h1, h2, h3, h4, .metric-value) {
+  color: var(--light-ink);
+  font-weight: 650;
+}
+html[data-theme="light"] .atlas-dashboard .company-heading h3 {
+  font-size: clamp(32px, 3.5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+html[data-theme="light"] .atlas-dashboard .company-heading h3 span {
+  color: #8b9db7;
+  font-weight: 600;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    p,
+    .muted,
+    .answer-context,
+    .company-description,
+    .answer-text,
+    .answer-text p
+  ) {
+  color: var(--light-copy);
+  font-size: 16px;
+  line-height: 1.8;
+}
+html[data-theme="light"] .atlas-dashboard .company-heading p {
+  font-size: 18px;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    small,
+    .chart-definition,
+    .chart-footer,
+    .snapshot-footer,
+    .profile-license,
+    .sidebar-bottom p,
+    .sidebar-bottom a,
+    .card-top p,
+    .metric-bottom small,
+    .chart-range span,
+    .page-kicker,
+    .sidebar-section-label,
+    .eyebrow
+  ) {
+  color: var(--light-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+html[data-theme="light"] .atlas-dashboard .metric-tile > span {
+  color: var(--light-copy);
+  font-size: 14px;
+  font-weight: 500;
+}
+html[data-theme="light"] .atlas-dashboard .metric-value {
+  font-size: 32px;
+  letter-spacing: -0.035em;
+}
+html[data-theme="light"] .atlas-dashboard .card-top h3,
+html[data-theme="light"] .atlas-dashboard .dashboard-card > h3 {
+  font-size: 21px;
+  letter-spacing: -0.025em;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    .dashboard-card,
+    .metric-tile,
+    .research-assistant-section,
+    .answer-card,
+    .settings-panel,
+    .integration-modal,
+    .chart-tooltip,
+    .workflow-panel,
+    .workflow-details,
+    .section-disclosure
+  ) {
+  background: #fff;
+  border-color: #dce5f0;
+  color: var(--light-copy);
+  box-shadow: none;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.dashboard-card, .research-assistant-section) {
+  border-radius: 20px;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.dashboard-sidebar, .pane-company-manager .integration-modal) {
+  background: #f0f4f8;
+  border-color: #dce5f0;
+  color: var(--light-copy);
+}
+html[data-theme="light"] .atlas-dashboard.pane-collapsed .dashboard-sidebar {
+  background: transparent;
+  border: 0;
+}
+html[data-theme="light"] .atlas-dashboard :is(button, input, textarea, select) {
+  border-color: #c7d4e6;
+  color: var(--light-copy);
+  font-size: 15px;
+}
+html[data-theme="light"] .atlas-dashboard :is(input, textarea, select) {
+  background: #fff;
+  border-radius: 12px;
+}
+html[data-theme="light"] .atlas-dashboard :is(input, textarea)::placeholder {
+  color: #7e8ca1;
+  opacity: 1;
+}
+html[data-theme="light"] .atlas-dashboard :is(label, summary) {
+  color: var(--light-ink);
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.primary, .company-strip button.active) {
+  background: var(--light-violet);
+  border-color: var(--light-violet);
+  color: #fff;
+  box-shadow: none;
+}
+html[data-theme="light"] .atlas-dashboard .primary:hover:not(:disabled) {
+  background: #452bdc;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.secondary, .text-button, .pane-toggle, .company-strip button) {
+  background: #fff;
+  color: var(--light-copy);
+  border-color: #c7d4e6;
+}
+html[data-theme="light"] .atlas-dashboard .company-strip button {
+  border-radius: 999px;
+  padding: 13px 23px;
+  font-size: 16px;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  .company-strip
+  button:hover:not(.active) {
+  background: #f0edff;
+  border-color: #c2b7ff;
+  color: var(--light-violet);
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    .sidebar-add,
+    .profile-link,
+    .quick-research button,
+    .answer-text a,
+    .sidebar-bottom a,
+    .integration-note,
+    .quick-research > small
+  ) {
+  color: var(--light-violet);
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.sidebar-companies > button, .dashboard-sidebar nav button) {
+  color: var(--light-copy);
+  background: transparent;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    .sidebar-companies > button.selected,
+    .dashboard-sidebar nav button.active
+  ) {
+  color: #4831c7;
+  background: #e9e5ff;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    .sidebar-companies > button:hover,
+    .dashboard-sidebar nav button:hover,
+    .quick-research button:hover
+  ) {
+  background: #edf1f8;
+  color: #3e4d6b;
+}
+html[data-theme="light"] .atlas-dashboard .sidebar-companies > button small {
+  color: var(--light-muted);
+}
+html[data-theme="light"] .atlas-dashboard .segmented-control {
+  background: #f1f4f9;
+  border-color: #dce5f0;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.chart-range button, .segmented-control button) {
+  background: transparent;
+  color: var(--light-muted);
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.chart-range button.active, .segmented-control button.active) {
+  background: #101a30;
+  color: #fff;
+  border-color: #101a30;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.profile-tags span, .sector-badge, .insight-label) {
+  background: #f3f1ff;
+  color: #5b47af;
+  border-color: #ded8fa;
+}
+html[data-theme="light"] .atlas-dashboard .data-insight strong {
+  color: #087d60;
+  font-size: 16px;
+  font-weight: 600;
+}
+html[data-theme="light"] .atlas-dashboard .insight-icon {
+  background: #e8f7f0;
+  color: #008864;
+  border-color: #c2e5d6;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    .data-insight,
+    .quick-research button,
+    .snapshot-footer,
+    .integration-list > div,
+    .sidebar-bottom,
+    .chart-footer
+  ) {
+  border-color: #e5ebf3;
+}
+html[data-theme="light"] .atlas-dashboard :is(th, td),
+html[data-theme="light"] .atlas-dashboard .table-scroll :is(th, td) {
+  color: var(--light-copy);
+  border-color: #e3eaf3;
+  font-size: 14px;
+}
+html[data-theme="light"] .atlas-dashboard :is(thead, th) {
+  background: #f2f5fa;
+  color: var(--light-ink);
+}
+html[data-theme="light"] .atlas-dashboard :is(.notice, .banner) {
+  background: #edf3fd;
+  color: #3f587c;
+  border-color: #d0deef;
+}
+html[data-theme="light"] .atlas-dashboard .error {
+  background: #fff0f2;
+  color: #b72447;
+  border-color: #f1c6d0;
+}
+html[data-theme="light"] .atlas-dashboard .success-toast {
+  background: #eaf8f0;
+  color: #176047;
+  border-color: #bcdfce;
+}
+html[data-theme="light"] .atlas-dashboard .processing {
+  color: var(--light-muted);
+}
+html[data-theme="light"] .atlas-dashboard .recharts-cartesian-axis-tick text {
+  fill: #5d7497;
+}
+html[data-theme="light"] .atlas-dashboard .recharts-cartesian-grid line {
+  stroke: #e2eaf2;
+}
+html[data-theme="light"] .atlas-dashboard .recharts-area-curve {
+  stroke: #009c76;
+}
+html[data-theme="light"] .atlas-dashboard .recharts-legend-item-text {
+  color: #526887 !important;
+}
+html[data-theme="light"] .atlas-dashboard .chart-tooltip {
+  box-shadow: 0 8px 24px #152c4914;
+}
+html[data-theme="light"] .atlas-dashboard .chart-tooltip :is(strong, b) {
+  color: var(--light-ink);
+}
+html[data-theme="light"] .atlas-dashboard .chart-tooltip span {
+  color: var(--light-copy) !important;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(button, input, textarea, select):focus-visible {
+  outline: 2px solid #8c78ff;
+  outline-offset: 3px;
+}
+html[data-theme="light"] .atlas-dashboard .pane-toggle:hover {
+  background: #eeeaff;
+  color: var(--light-violet);
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  .research-assistant-section
+  .question-section
+  form {
+  background: #fff;
+  border-color: #c7d4e6;
+  box-shadow: 0 1px 2px #17294406;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(.comparison-picker label, .library-intro, pre) {
+  background: #f3f6fb;
+  border-color: #dce5f0;
+  color: var(--light-copy);
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  .comparison-picker
+  label:has(input:checked) {
+  background: #eeeaff;
+  border-color: #c6baff;
+  color: #4931bd;
+}
+html[data-theme="light"] .atlas-dashboard .comparison-picker label > span {
+  color: var(--light-muted);
+}
+html[data-theme="light"] .atlas-dashboard input[type="checkbox"] {
+  accent-color: #5337ff;
+}
+html[data-theme="light"] .atlas-dashboard .company-mark {
+  background: #eeeaff;
+  color: #5337ff;
+  border-color: #d6ceff;
+}
+html[data-theme="light"] .atlas-dashboard .circle {
+  background: #f2f5fa;
+  border-color: #cbd7e6;
+  color: #617796;
+}
+html[data-theme="light"] .atlas-dashboard .stage strong {
+  color: #475b77;
+}
+html[data-theme="light"] .atlas-dashboard .stage.running .circle {
+  background: #fff3e5;
+  border-color: #ca6a13;
+  color: #b75a08;
+}
+html[data-theme="light"] .atlas-dashboard .stage.running strong {
+  color: #a4520a;
+}
+html[data-theme="light"] .atlas-dashboard .stage.completed .circle {
+  background: #e8f7f0;
+  border-color: #74baa0;
+  color: #087d60;
+}
+html[data-theme="light"] .atlas-dashboard .progress-track {
+  background: #dfe8f1;
+}
+html[data-theme="light"] .atlas-dashboard .stage:not(:last-child):after {
+  background: #cad7e6;
+}
+html[data-theme="light"] .atlas-dashboard .stage.completed:after {
+  background: #74baa0;
+}
+/* Keep the panel surface visible throughout its closing transition. */
+html[data-theme="light"] .atlas-dashboard.pane-collapsed .dashboard-sidebar {
+  background: #f0f4f8;
+}
+html[data-theme="light"] .atlas-dashboard .browser-company {
+  background: transparent;
+}
+html[data-theme="light"] .atlas-dashboard .browser-company.selected {
+  background: #f3f1ff;
+  border-color: #e3dcff;
+}
+html[data-theme="light"] .atlas-dashboard .browser-company:hover {
+  background: #f6f8fc;
+}
+html[data-theme="light"] .atlas-dashboard .browser-company-open {
+  background: transparent;
+  color: var(--light-copy);
+}
+html[data-theme="light"] .atlas-dashboard .browser-company-open b {
+  color: var(--light-ink);
+}
+html[data-theme="light"] .atlas-dashboard .browser-membership {
+  background: #fff;
+  color: var(--light-violet);
+  border-color: #cfc5ff;
+}
+html[data-theme="light"] .atlas-dashboard .company-strip .browse-all-trigger {
+  background: transparent;
+  color: var(--light-copy);
+}
+/* Warm, Claude-inspired menu text with generous spacing in light mode. */
+html[data-theme="light"] .atlas-dashboard .pane-content {
+  color: #3d3a34;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand h1 {
+  color: #292722;
+  font-size: 25px;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  .pane-content
+  :is(nav button, .sidebar-add) {
+  color: #45423b;
+  font-size: 17px;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content nav button.active {
+  background: #e9e4db;
+  color: #754f34;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  .pane-content
+  nav
+  button:hover:not(:disabled),
+html[data-theme="light"]
+  .atlas-dashboard
+  .pane-content
+  .sidebar-add:hover:not(:disabled) {
+  background: #eeeae3;
+  color: #292722;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content :is(label, summary) {
+  color: #403d36;
+  font-size: 16px;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  .pane-content
+  :is(p, small, .sidebar-section-label, .integration-note) {
+  color: #68645c;
+  font-size: 14px;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content :is(input, select) {
+  background: #fffefa;
+  color: #37342e;
+  border-color: #bcbcb4;
+  font-size: 16px;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content .sidebar-bottom a {
+  color: #80583d;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content .saved-tickers li {
+  color: #403d36;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand {
+  background: #f0f4f8;
+  border-bottom-color: #d5dbe3;
+}

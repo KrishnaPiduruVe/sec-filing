@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from corporate_atlas.paths import DATA_ROOT
 
-from corporate_atlas.core.build_knowledge_graph import chunk_text, html_to_text
+from corporate_atlas.core.filing_text import chunk_text, html_to_text
 from corporate_atlas.core.token_usage import record_embedding_usage
 from corporate_atlas.core.vector_store import DEFAULT_VECTOR_ROOT, embedding_settings, open_vector_store
 
@@ -117,7 +117,7 @@ def build_vector_store(
         record_embedding_usage(documents[start:end], model)
         print(f"Indexed {end}/{len(documents)} chunks", flush=True)
     # Preserve old chunks until every replacement batch has succeeded.
-    stale_ids = sorted(set(existing) - set(ids))
+    stale_ids = sorted(item for item in set(existing) - set(ids) if ":public:" not in item)
     if stale_ids:
         store.delete(ids=stale_ids)
     return len(documents)
