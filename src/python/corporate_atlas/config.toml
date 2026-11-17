@@ -1,0 +1,117 @@
+[paths]
+data_dir = "."
+filings_dir = "sec_filings"
+vector_dir = "chroma_db"
+graph_dir = "knowledge_graphs"
+usage_database = "token_usage.sqlite3"
+vector_collection = "sec_filings"
+frontend_static_dir = "static"
+
+[api]
+host = "127.0.0.1"
+client_host = "127.0.0.1"
+port = 8501
+trusted_hosts = ["127.0.0.1", "localhost"]
+allowed_origin_hosts = ["127.0.0.1", "localhost"]
+allowed_origin_ports = [8000, 8501, 5173]
+
+[frontend]
+dev_host = "127.0.0.1"
+dev_port = 5173
+job_poll_interval_ms = 900
+stock_chart_ranges = ["1mo", "3mo", "6mo", "1y"]
+api_proxy_prefixes = ["/health", "/status", "/prepare", "/query", "/jobs", "/stocks", "/companies", "/filings", "/usage", "/config"]
+build_static_relative_path = "../../ui/corporate_atlas_ui/static"
+
+[http]
+default_timeout_seconds = 20
+sec_timeout_seconds = 60
+api_client_connect_timeout_seconds = 3
+api_client_read_timeout_seconds = 90
+sec_min_interval_seconds = 0.11
+sec_download_chunk_bytes = 65536
+
+[sec]
+www_base_url = "https://www.sec.gov"
+data_base_url = "https://data.sec.gov"
+company_tickers_path = "/files/company_tickers.json"
+submissions_path = "/submissions/CIK{cik}.json"
+archive_path = "/Archives/edgar/data/{cik}/{accession}"
+filing_index_filename = "index.json"
+user_agent_env_var = "SEC_USER_AGENT"
+default_tickers = ["AAPL", "WFC", "RIVN"]
+
+[market_data]
+default_range = "1mo"
+default_interval = "1d"
+maximum_range_name = "max"
+default_currency = "USD"
+yahoo_include_adjusted_close = true
+supported_ranges = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "5y", "max"]
+alpaca_range_days = { "1d" = 1, "5d" = 5, "1mo" = 30, "3mo" = 92, "6mo" = 183, "1y" = 365, "5y" = 1825 }
+maximum_history_start = "2016-01-01"
+alpaca_timeframes = { "1d" = "1Day", "1wk" = "1Week", "1mo" = "1Month" }
+yahoo_base_url = "https://query1.finance.yahoo.com"
+yahoo_quote_summary_path = "/v10/finance/quoteSummary/{symbol}"
+yahoo_chart_path = "/v8/finance/chart/{symbol}"
+yahoo_quote_modules = ["price", "summaryDetail", "defaultKeyStatistics", "assetProfile", "financialData", "calendarEvents"]
+alpaca_base_url = "https://data.alpaca.markets"
+alpaca_snapshot_path = "/v2/stocks/{symbol}/snapshot"
+alpaca_bars_path = "/v2/stocks/{symbol}/bars"
+alpaca_feed = "iex"
+alpaca_adjustment = "split"
+alpaca_sort_order = "asc"
+alpaca_bar_limit = 10000
+
+[indexing]
+chunk_size = 4000
+overlap = 400
+batch_size = 5
+batch_delay_seconds = 0
+max_retries = 3
+quota_backoff_seconds = 65
+quota_backoff_multiplier = 2
+max_batch_size = 100
+max_batch_delay_seconds = 600
+
+[graph]
+chunk_size = 30000
+overlap = 500
+max_evidence_chars = 5000
+
+[query]
+default_mode = "vector"
+default_top_k = 12
+max_top_k = 50
+max_question_chars = 5000
+max_history_messages = 8
+max_history_message_chars = 1000
+max_sql_chars = 4000
+max_sql_result_rows = 100
+
+[limits]
+ticker_input_chars = 400
+ticker_symbol_chars = 15
+tickers_per_job = 20
+filing_delete_selections = 100
+job_history_entries = 100
+job_output_chars = 200000
+
+[jobs]
+prepare_stop_wait_seconds = 30
+default_stop_wait_seconds = 5
+shutdown_timeout_seconds = 35
+shutdown_poll_interval_seconds = 0.05
+
+[launcher]
+startup_timeout_seconds = 20
+frontend_timeout_seconds = 20
+readiness_request_timeout_seconds = 1
+existing_service_timeout_seconds = 2
+poll_interval_seconds = 0.2
+graceful_shutdown_timeout_seconds = 45
+forced_shutdown_timeout_seconds = 10
+monitor_interval_seconds = 0.25
+
+[token_usage]
+default_tokenizer_model = "gpt-4o-mini"
