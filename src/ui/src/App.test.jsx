@@ -28,6 +28,7 @@ beforeEach(() => {
   localStorage.clear();
   currentJob = null;
   globalThis.fetch = vi.fn(async (path, options = {}) => {
+    if (path === "/chat/history") return response({ entries: [] });
     if (path === "/jobs/current") return response({ job: currentJob });
     if (path === "/research/catalog")
       return response({
@@ -224,6 +225,7 @@ describe("Corporate Atlas React application", () => {
       screen.getByRole("progressbar", { name: "Preparation stages" }),
     ).toHaveAttribute("aria-valuenow", "2");
   });
+
   it("submits a question with retrieval settings, then shows the cleaned answer", async () => {
     await renderExpanded();
     const user = userEvent.setup();

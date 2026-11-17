@@ -33,6 +33,7 @@ import {
   Tooltip,
   BarChart,
   Bar,
+  Cell,
   ReferenceLine,
   Legend,
 } from "recharts";
@@ -93,11 +94,27 @@ function EmptyChart() {
     </div>
   );
 }
-function Metric({ label, value, detail, series, color = "#79a8ff" }) {
+const numericTone = (value) =>
+  !Number.isFinite(value) || value === 0
+    ? "data-neutral"
+    : value > 0
+      ? "data-positive"
+      : "data-negative";
+const toneColor = (value) =>
+  !Number.isFinite(value) || value === 0
+    ? "var(--data-neutral)"
+    : value > 0
+      ? "var(--data-positive)"
+      : "var(--data-negative)";
+const trendChange = (series) => {
+  const points = (series || []).map((p) => p.value).filter(Number.isFinite);
+  return points.length > 1 ? points.at(-1) - points[0] : null;
+};
+function Metric({ label, value, detail, series, toneValue }) {
   return (
     <article className="metric-tile">
       <span>{label}</span>
-      <div className="metric-value">{value}</div>
+      <div className={`metric-value ${numericTone(toneValue)}`}>{value}</div>
       <div className="metric-bottom">
         <small>{detail}</small>
         {series?.length > 1 && (
@@ -106,7 +123,7 @@ function Metric({ label, value, detail, series, color = "#79a8ff" }) {
               <LineChart data={series}>
                 <Line
                   dataKey="value"
-                  stroke={color}
+                  stroke={toneColor(trendChange(series))}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -243,6 +260,9 @@ export default function ResearchDashboard({
   const history =
       range === "all" ? fullHistory : fullHistory.slice(-Number(range)),
     metrics = company.metrics || {};
+  const selectedTrendColor = toneColor(
+    trendChange(history.map((p) => ({ value: p[metric] }))),
+  );
   const tracked = catalog.filter((c) => c.tracked);
   useEffect(() => {
     const abort = new AbortController();
@@ -522,20 +542,21 @@ export default function ResearchDashboard({
                         />
                         <Metric
                           label="Net income"
+                          toneValue={metrics.net_income}
                           value={money(metrics.net_income)}
                           detail={period}
                           series={history.map((p) => ({ value: p.net_income }))}
-                          color="#9c95e8"
                         />
                         <Metric
                           label="Revenue growth"
+                          toneValue={metrics.revenue_growth}
                           value={pct(metrics.revenue_growth)}
                           detail="vs. previous annual period"
                           series={[]}
-                          color="#69c5b1"
                         />
                         <Metric
                           label="Net profit margin"
+                          toneValue={metrics.net_margin}
                           value={
                             metrics.net_margin == null
                               ? "—"
@@ -543,7 +564,6 @@ export default function ResearchDashboard({
                           }
                           detail="Net income ÷ revenue"
                           series={history.map((p) => ({ value: p.net_margin }))}
-                          color="#e7b777"
                         />
                       </div>
                       <div className="overview-chart-grid">
@@ -600,6 +620,7 @@ export default function ResearchDashboard({
                             <>
                               <div
                                 className="financial-chart"
+                                style={{ "--trend-color": selectedTrendColor }}
                                 aria-label={`Annual ${metric === "revenue" ? "revenue" : "net income"} chart for ${active}`}
                               >
                                 <ResponsiveContainer width="100%" height={260}>
@@ -622,12 +643,12 @@ export default function ResearchDashboard({
                                       >
                                         <stop
                                           offset="0%"
-                                          stopColor="#69d1ba"
+                                          stopColor={selectedTrendColor}
                                           stopOpacity={0.25}
                                         />
                                         <stop
                                           offset="100%"
-                                          stopColor="#69d1ba"
+                                          stopColor={selectedTrendColor}
                                           stopOpacity={0.01}
                                         />
                                       </linearGradient>
@@ -667,12 +688,12 @@ export default function ResearchDashboard({
                                           ? "Revenue"
                                           : "Net income"
                                       }
-                                      stroke="#69d1ba"
+                                      stroke={selectedTrendColor}
                                       fill="url(#annual-fill)"
                                       strokeWidth={2.5}
                                       dot={{
                                         r: 3,
-                                        fill: "#69d1ba",
+                                        fill: selectedTrendColor,
                                         strokeWidth: 0,
                                       }}
                                       activeDot={{ r: 5 }}
@@ -779,7 +800,14 @@ export default function ResearchDashboard({
                                     fill="#a49ade"
                                     maxBarSize={28}
                                     radius={[3, 3, 0, 0]}
-                                  />
+                                  >
+                                    {history.map((row) => (
+                                      <Cell
+                                        key={row.end}
+                                        fill={toneColor(row.net_margin)}
+                                      />
+                                    ))}
+                                  </Bar>
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
@@ -800,7 +828,9 @@ export default function ResearchDashboard({
                             </span>
                           </div>
                           {metrics.revenue_growth != null && (
-                            <div className="data-insight">
+                            <div
+                              className={`data-insight ${numericTone(metrics.revenue_growth)}`}
+                            >
                               <span className="insight-icon">
                                 {metrics.revenue_growth >= 0 ? (
                                   <ArrowUpRight size={18} />
@@ -911,11 +941,11 @@ export default function ResearchDashboard({
                                 <tr key={row.end}>
                                   <td>{row.end}</td>
                                   <td>{row.revenue?.toLocaleString()}</td>
-                                  <td>
+                                  <td className={numericTone(row.net_income)}>
                                     {row.net_income?.toLocaleString() ??
                                       "Unavailable"}
                                   </td>
-                                  <td>
+                                  <td className={numericTone(row.net_margin)}>
                                     {row.net_margin == null
                                       ? "Unavailable"
                                       : `${row.net_margin.toFixed(2)}%`}
@@ -1028,9 +1058,15 @@ export default function ResearchDashboard({
                                     </td>
                                     <td>{day(m.period_end)}</td>
                                     <td>{money(m.revenue)}</td>
-                                    <td>{money(m.net_income)}</td>
-                                    <td>{pct(m.revenue_growth)}</td>
-                                    <td>
+                                    <td className={numericTone(m.net_income)}>
+                                      {money(m.net_income)}
+                                    </td>
+                                    <td
+                                      className={numericTone(m.revenue_growth)}
+                                    >
+                                      {pct(m.revenue_growth)}
+                                    </td>
+                                    <td className={numericTone(m.net_margin)}>
                                       {m.net_margin == null
                                         ? "—"
                                         : `${m.net_margin.toFixed(1)}%`}

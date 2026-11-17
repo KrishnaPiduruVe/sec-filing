@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from corporate_atlas.paths import DATA_ROOT
 from corporate_atlas.services.research import research_company
 from corporate_atlas.core.llm_config import get_chat_model, get_model_identifier
@@ -52,9 +52,16 @@ def main():
         'Cite source URLs using Markdown links and reporting-period dates for financial comparisons. '
         'Distinguish general Wikimedia descriptions from SEC facts and retrieved filing excerpts. '
         'Fiscal year ends can differ across companies; do not imply identical periods. '
+        'Previous answers are conversation history, not independent evidence; verify claims against the current source context. '
         'State when a fact is unavailable. Do not infer current stock prices, make buy/sell recommendations, '
         'or predict prices from these historical snapshots.')),
         HumanMessage(content=f'{context}\n\nQuestion: {args.question}')]
+    from corporate_atlas.services.chat_history import entries
+    previous = entries(args.tickers)
+    history_messages = []
+    for entry in reversed(previous):
+        history_messages.extend([HumanMessage(content=entry['question']), AIMessage(content=entry['answer'])])
+    messages = [messages[0], *history_messages, messages[-1]]
     response = get_chat_model().invoke(messages)
     record_chat_usage('answer', get_model_identifier(), messages, response)
     print(str(response.content))

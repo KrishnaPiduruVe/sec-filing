@@ -1,5 +1,7 @@
 """Offline API integration tests; no real filing/provider requests or deletions."""
 import sys
+import tempfile
+from pathlib import Path
 import time
 import unittest
 from unittest.mock import patch
@@ -9,6 +11,11 @@ from corporate_atlas.api.app import create_app, JobService
 
 class APITests(unittest.TestCase):
     def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        history = patch('corporate_atlas.services.chat_history.HISTORY_DB', Path(folder.name)/'history.sqlite3')
+        history.start()
+        self.addCleanup(history.stop)
         self.service = JobService()
         self.client = TestClient(create_app(self.service), base_url='http://127.0.0.1:8000')
         self.client.__enter__()
@@ -42,6 +49,9 @@ class APITests(unittest.TestCase):
             job = self.finish(first.json()['id'])
             self.assertEqual(job['status'], 'completed')
             self.assertIn('A grounded answer', job['output'])
+            saved = self.client.get('/chat/history').json()['entries']
+            self.assertEqual(len(saved), 1)
+            self.assertEqual(saved[0]['question'], 'What are the risks?')
             second = self.client.post('/prepare', json={'tickers': 'AAPL'})
             self.assertEqual(second.status_code, 202)
             self.finish(second.json()['id'])

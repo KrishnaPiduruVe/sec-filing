@@ -492,3 +492,86 @@ html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand {
   background: #f0f4f8;
   border-bottom-color: #d5dbe3;
 }
+/* Keep the light-mode brand heading clean and borderless. */
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand,
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand h1,
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand img {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+html[data-theme="light"]
+  .atlas-dashboard
+  :is(
+    .dashboard-card,
+    .metric-tile,
+    .research-assistant-section,
+    .answer-card,
+    .settings-panel,
+    .integration-modal,
+    .workflow-panel,
+    .section-disclosure,
+    .download-dock
+  ) {
+  border-radius: var(--radius-card);
+}
+html[data-theme="light"] .atlas-dashboard :is(button, input, textarea, select),
+html[data-theme="light"]
+  .atlas-dashboard
+  .pane-content
+  :is(button, input, textarea, select) {
+  border-radius: var(--radius-control);
+}
+html[data-theme="light"] .atlas-dashboard .company-strip button {
+  border-radius: 999px;
+}
+html[data-theme="light"] .atlas-dashboard input[type="checkbox"] {
+  border-radius: 4px;
+}
+:root[data-theme="light"] {
+  --sidebar-surface: #f0f4f8;
+}
+html[data-theme="light"] .atlas-dashboard .dashboard-sidebar,
+html[data-theme="light"] .atlas-dashboard.pane-open .dashboard-sidebar,
+html[data-theme="light"] .atlas-dashboard.pane-collapsed .dashboard-sidebar,
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand {
+  background: var(--sidebar-surface);
+  border: 0;
+  box-shadow: none;
+  outline: 0;
+}
+html[data-theme="light"] .atlas-dashboard .pane-content .dashboard-brand {
+  border-radius: 0;
+}
+:root[data-theme="light"] {
+  --data-positive: #00845c;
+  --data-negative: #c92c4d;
+  --data-neutral: #60728f;
+}
+html[data-theme="light"] .atlas-dashboard .data-positive,
+html[data-theme="light"] .atlas-dashboard .table-scroll td.data-positive,
+html[data-theme="light"] .atlas-dashboard .metric-value.data-positive,
+html[data-theme="light"]
+  .atlas-dashboard
+  .data-insight.data-positive
+  :is(strong, .insight-icon) {
+  color: var(--data-positive);
+}
+html[data-theme="light"] .atlas-dashboard .data-negative,
+html[data-theme="light"] .atlas-dashboard .table-scroll td.data-negative,
+html[data-theme="light"] .atlas-dashboard .metric-value.data-negative,
+html[data-theme="light"]
+  .atlas-dashboard
+  .data-insight.data-negative
+  :is(strong, .insight-icon) {
+  color: var(--data-negative);
+}
+html[data-theme="light"] .atlas-dashboard .recharts-area-curve {
+  stroke: var(--trend-color, var(--data-neutral));
+}
+html[data-theme="light"] .atlas-dashboard .company-strip button,
+html[data-theme="light"] .atlas-dashboard .company-strip button:hover,
+html[data-theme="light"] .atlas-dashboard .company-strip button.active {
+  border: 0;
+  box-shadow: none;
+}

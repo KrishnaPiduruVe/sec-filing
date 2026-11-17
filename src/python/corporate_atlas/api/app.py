@@ -244,6 +244,11 @@ def create_app(service=None, ui_dir=None):
             raise HTTPException(422, 'Invalid ticker.')
         return {'label': company_label(ticker.upper())}
 
+    @application.get('/chat/history', tags=['Company research'])
+    def chat_history():
+        from corporate_atlas.services.chat_history import entries
+        return {'entries':entries()}
+
     @application.get('/usage', tags=['Data'])
     def usage():
         columns = ['operation', 'input_tokens', 'output_tokens', 'events', 'estimated_events']

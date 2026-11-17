@@ -84,6 +84,7 @@ class JobManager:
                 raise RuntimeError('A task is already running. Wait for it or click Stop.')
             self.job = dict(id=secrets.token_hex(8), action=data['action'], status='running',
                             output='', started=time.time(), elapsed=0, exit_code=None,
+                            question=data.get('question',''), company_tickers=data.get('company_tickers',[]),
                             tickers=re.split(r'[\s,]+', str(data.get('tickers', '')).strip().upper()) if data.get('tickers') else [],
                             steps={name: {'status': 'pending', 'message': ''} for name in ('download', 'profile', 'vector')})
             self.process = None
@@ -123,6 +124,12 @@ class JobManager:
                         step['status'] = 'stopped' if self.job['status'] == 'stopped' else 'failed'
                 self.job['finished_at'] = time.time()
                 self.job['elapsed'] = round(self.job['finished_at'] - self.job['started'])
+                if self.job['action'] == 'query' and self.job['status'] == 'completed':
+                    try:
+                        from corporate_atlas.services.chat_history import record
+                        record(self.job)
+                    except Exception:
+                        self.job['history_error'] = 'The answer is available, but its history could not be saved.'
                 self.process = None
 
     def stop(self):

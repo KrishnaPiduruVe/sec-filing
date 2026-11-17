@@ -1014,9 +1014,9 @@ body {
 .company-heading h3 > span {
   font-size: 10px;
   color: #8096b4;
-  border: 1px solid #344155;
-  border-radius: 4px;
-  padding: 3px 6px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
   letter-spacing: 0.2px;
   margin-left: 12px;
   vertical-align: middle;
@@ -3366,4 +3366,155 @@ body {
 }
 .atlas-dashboard .pane-content {
   padding-bottom: 155px;
+}
+/* Shared corner shapes across both color modes. */
+.atlas-dashboard {
+  --radius-card: 20px;
+  --radius-control: 12px;
+  --radius-small: 8px;
+}
+.atlas-dashboard
+  :is(
+    .dashboard-card,
+    .metric-tile,
+    .research-assistant-section,
+    .answer-card,
+    .settings-panel,
+    .integration-modal,
+    .workflow-panel,
+    .section-disclosure,
+    .download-dock
+  ) {
+  border-radius: var(--radius-card);
+}
+.atlas-dashboard :is(button, input, textarea, select),
+.atlas-dashboard .pane-content :is(button, input, textarea, select),
+.atlas-dashboard .research-assistant-section .question-section form {
+  border-radius: var(--radius-control);
+}
+.atlas-dashboard
+  :is(
+    .table-scroll,
+    pre,
+    .chart-tooltip,
+    .banner,
+    .notice,
+    .success-toast,
+    .browser-company,
+    .comparison-picker label
+  ) {
+  border-radius: var(--radius-control);
+}
+.atlas-dashboard .table-scroll {
+  overflow: auto;
+}
+.atlas-dashboard .table-scroll table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+.atlas-dashboard .table-scroll thead th:first-child {
+  border-top-left-radius: var(--radius-control);
+}
+.atlas-dashboard .table-scroll thead th:last-child {
+  border-top-right-radius: var(--radius-control);
+}
+.atlas-dashboard .table-scroll tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--radius-control);
+}
+.atlas-dashboard .table-scroll tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--radius-control);
+}
+.atlas-dashboard
+  :is(
+    .sector-badge,
+    .profile-tags span,
+    .insight-label,
+    .insight-icon,
+    .segmented-control,
+    .chart-range button
+  ) {
+  border-radius: var(--radius-small);
+}
+.atlas-dashboard .company-strip button,
+.atlas-dashboard .saved-tickers li {
+  border-radius: 999px;
+}
+.atlas-dashboard input[type="checkbox"] {
+  border-radius: 4px;
+}
+/* Brand heading stays borderless in both themes. */
+.atlas-dashboard .pane-content .dashboard-brand,
+.atlas-dashboard .pane-content .dashboard-brand h1,
+.atlas-dashboard .pane-content .dashboard-brand img {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+/* Use one continuous header surface while the sidebar slides. */
+:root {
+  --sidebar-surface: #1b2331;
+}
+.atlas-dashboard .pane-content,
+.atlas-dashboard.pane-open .pane-content {
+  opacity: 1;
+  transition: visibility 0s linear;
+}
+.atlas-dashboard.pane-collapsed .pane-content {
+  visibility: hidden;
+  transition-delay: var(--pane-time);
+}
+.atlas-dashboard.pane-open .pane-content {
+  visibility: visible;
+  transition-delay: 0s;
+}
+:root {
+  --data-positive: #69d6a5;
+  --data-negative: #ff91a0;
+  --data-neutral: #a9b8cf;
+}
+.atlas-dashboard .data-positive,
+.atlas-dashboard .table-scroll td.data-positive,
+.atlas-dashboard .metric-value.data-positive {
+  color: var(--data-positive);
+}
+.atlas-dashboard .data-negative,
+.atlas-dashboard .table-scroll td.data-negative,
+.atlas-dashboard .metric-value.data-negative {
+  color: var(--data-negative);
+}
+.atlas-dashboard .data-insight.data-negative :is(strong, .insight-icon) {
+  color: var(--data-negative);
+}
+.atlas-dashboard .data-insight.data-positive :is(strong, .insight-icon) {
+  color: var(--data-positive);
+}
+.chat-history {
+  margin-top: 24px;
+}
+.history-entry {
+  padding: 14px 0;
+  border-top: 1px solid var(--dash-border);
+}
+.atlas-dashboard .history-entry > summary {
+  font-size: 16px;
+  line-height: 1.65;
+  padding: 6px 0;
+  color: var(--dash-text);
+  overflow-wrap: anywhere;
+}
+.atlas-dashboard .history-meta {
+  font-size: 13px;
+  color: var(--dash-muted);
+  margin: 8px 0 16px;
+}
+.history-entry .answer-text {
+  overflow-wrap: anywhere;
+}
+.atlas-dashboard .company-strip button,
+.atlas-dashboard .company-strip button:hover,
+.atlas-dashboard .company-strip button.active {
+  border: 0;
+  box-shadow: none;
 }

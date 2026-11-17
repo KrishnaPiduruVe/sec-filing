@@ -75,6 +75,15 @@ these are historical financial results, not stock-price feeds or forecasts.
 Public profiles and financial snapshots are stored in Chroma. A company can
 appear with only Wikimedia content when SEC filings are unavailable.
 
+## Chat history
+
+**Recent questions** below the answer panel keeps the last ten completed
+question-and-answer pairs across all companies. Expand a question to read its
+formatted answer, company context, and time. Records survive page refreshes and
+server restarts in `chat_history.sqlite3`. Failed or stopped questions are not
+saved. Follow-up questions include saved pairs for the same selected companies;
+current indexed sources remain the factual basis for answers.
+
 ## Command line
 
 ```bash
