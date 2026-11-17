@@ -158,8 +158,14 @@ class LauncherSettings(_ConfigModel):
     monitor_interval_seconds: float = Field(gt=0)
 
 
+class TokenPrice(_ConfigModel):
+    input: float = Field(ge=0)
+    output: float = Field(ge=0)
+
+
 class TokenUsageSettings(_ConfigModel):
     default_tokenizer_model: str
+    usd_per_million_tokens: dict[str, TokenPrice] = Field(default_factory=dict)
 
 
 class AppSettings(_ConfigModel):

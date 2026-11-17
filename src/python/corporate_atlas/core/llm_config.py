@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,34 @@ from dotenv import load_dotenv
 from corporate_atlas.paths import ENV_FILE
 from langchain.chat_models import init_chat_model
 from langchain.embeddings import init_embeddings
+
+
+class ModelResponseTextError(ValueError):
+    """The provider returned no usable visible text."""
+
+
+def extract_response_text(response: Any) -> str:
+    content = getattr(response, "content", response)
+    if isinstance(content, str):
+        text = content
+    else:
+        blocks = [content] if isinstance(content, Mapping) else content
+        if not isinstance(blocks, Sequence):
+            raise ModelResponseTextError("The chat model returned an unsupported response format.")
+        text_parts = []
+        for block in blocks:
+            if isinstance(block, str):
+                text_parts.append(block)
+            elif (
+                isinstance(block, Mapping)
+                and block.get("type") in (None, "text")
+                and isinstance(block.get("text"), str)
+            ):
+                text_parts.append(block["text"])
+        text = "\n".join(part for part in text_parts if part.strip())
+    if not text.strip():
+        raise ModelResponseTextError("The chat model returned no text content.")
+    return text.strip()
 
 
 def _load_config() -> None:

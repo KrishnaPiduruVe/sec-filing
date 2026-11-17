@@ -7,6 +7,7 @@ from pathlib import Path
 
 from corporate_atlas.paths import DATA_ROOT
 from corporate_atlas.settings import SETTINGS
+from corporate_atlas.services.wikimedia import index_company_profile
 
 ROOT = DATA_ROOT
 STAGES = ('download', 'vector')
@@ -46,7 +47,8 @@ def vector_complete(ticker):
         ):
             expected.add(f'{ticker}:{path.parent.name}:{i}')
     existing = set(collection.get(where={'ticker': ticker}, include=[])['ids'])
-    return bool(expected) and expected == existing
+    filing_ids = {document_id for document_id in existing if not document_id.startswith(('stock:', 'wikimedia:'))}
+    return bool(expected) and expected == filing_ids
 
 
 def run_script(script, *args):
@@ -83,6 +85,13 @@ def _prepare(
         run_script('corporate_atlas.core.build_vector_store_paced', '--tickers', *missing_vectors,
                    '--batch-size', str(batch_size), '--batch-delay', str(batch_delay))
     event('vector', 'completed', 'Vector store ready' if missing_vectors else 'Vectors already available')
+    for ticker in tickers:
+        try:
+            index_company_profile(ticker, ROOT / SETTINGS.paths.filings_dir, ROOT / SETTINGS.paths.vector_dir)
+        except InterruptedError:
+            raise
+        except Exception as error:
+            print(f'Wikipedia overview unavailable for {ticker} ({type(error).__name__}).', flush=True)
     print('Your information is ready. Ask a question below.', flush=True)
 
 

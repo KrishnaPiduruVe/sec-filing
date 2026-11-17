@@ -56,7 +56,10 @@ def main():
             raise ValueError('Chat history contains an invalid message.')
     if args.mode == 'usage':
         from corporate_atlas.services.usage_query import answer_usage_question
-        print(answer_usage_question(args.question, history=history))
+        try:
+            print(answer_usage_question(args.question, history=history))
+        except (ValueError, FileNotFoundError) as exc:
+            raise SystemExit(str(exc)) from None
         return
     from corporate_atlas.core.query_graph import load_graph, answer_question
     from corporate_atlas.core.vector_store import open_vector_store

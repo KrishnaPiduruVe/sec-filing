@@ -75,7 +75,10 @@ def build_vector_store(
     store = open_vector_store(vector_root, create=True)
     existing = store.get(where={"ticker": {"$in": tickers}}).get("ids", [])
     store.add_texts(texts=documents, metadatas=metadatas, ids=ids)
-    stale_ids = sorted(set(existing) - set(ids))
+    stale_ids = sorted(
+        document_id for document_id in set(existing) - set(ids)
+        if not document_id.startswith(("stock:", "wikimedia:"))
+    )
     if stale_ids:
         store.delete(ids=stale_ids)
     record_embedding_usage(documents, model)

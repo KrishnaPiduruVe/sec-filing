@@ -1,4 +1,4 @@
-import type { ChatMessage, ClientConfig, Company, Job, StockSnapshot } from "./types";
+import type { ChatMessage, ClientConfig, Company, CompanyOverviewData, Job, StockSnapshot, UsageReport } from "./types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -21,6 +21,14 @@ export function listCompanies(): Promise<{ companies: Company[] }> {
 
 export function getClientConfig(): Promise<ClientConfig> {
   return request("/config");
+}
+
+export function getCompanyLabel(ticker: string, signal?: AbortSignal): Promise<{ label: string }> {
+  return request(`/companies/${encodeURIComponent(ticker)}/label`, { signal });
+}
+
+export function getCompanyOverview(ticker: string, signal?: AbortSignal): Promise<CompanyOverviewData> {
+  return request(`/companies/${encodeURIComponent(ticker)}/overview`, { signal });
 }
 
 export function stockSnapshot(ticker: string, range: string, signal?: AbortSignal): Promise<StockSnapshot> {
@@ -69,6 +77,10 @@ export function askUsageQuestion(
     method: "POST",
     body: JSON.stringify({ question, mode: "usage", top_k: topK, history }),
   });
+}
+
+export function getUsage(jobId: string, signal?: AbortSignal): Promise<UsageReport> {
+  return request(`/usage?job_id=${encodeURIComponent(jobId)}`, { cache: "no-store", signal });
 }
 
 export function jobStatus(id: string): Promise<Job> {

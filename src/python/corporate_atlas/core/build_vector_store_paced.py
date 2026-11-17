@@ -121,7 +121,10 @@ def build_vector_store(
         record_embedding_usage(documents[start:end], model)
         print(f"Indexed {end}/{len(documents)} chunks", flush=True)
     # Preserve old chunks until every replacement batch has succeeded.
-    stale_ids = sorted(set(existing) - set(ids))
+    stale_ids = sorted(
+        document_id for document_id in set(existing) - set(ids)
+        if not document_id.startswith(("stock:", "wikimedia:"))
+    )
     if stale_ids:
         store.delete(ids=stale_ids)
     return len(documents)

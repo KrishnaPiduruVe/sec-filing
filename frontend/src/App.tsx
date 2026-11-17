@@ -1,6 +1,9 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { askQuestion, askUsageQuestion, cancelJob, getClientConfig, indexStock, listCompanies, prepareSec, stockSnapshot, waitForJob } from "./api";
-import Chart from "./Chart";
+import Chart, { hasCandlestickData } from "./Chart";
+import type { ChartMode } from "./Chart";
+import { CompanyOverview } from "./CompanyOverview";
+import { UsageLine } from "./UsageLine";
 import { AssistantResponse } from "./AssistantResponse";
 import type { ChatMessage, ClientConfig, Company, Job, StockSnapshot } from "./types";
 import capgeminiMark from "../../src/ui/corporate_atlas_ui/assets/capgemini-icon.png";
@@ -39,16 +42,6 @@ function shortTime(value: number | null | undefined): string {
   return `As of ${new Date(value * 1000).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
 }
 
-function safeWebsite(value: string | null | undefined): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
-  } catch {
-    return null;
-  }
-}
-
 function makeMessage(
   role: ChatMessage["role"],
   content: string,
@@ -57,18 +50,13 @@ function makeMessage(
   return { id: `${Date.now()}-${Math.random()}`, role, content, scope };
 }
 
-function isTokenUsageQuestion(value: string): boolean {
-  return /\bhow\s+(?:much|many)\s+(?:input\s+|output\s+)?tokens?\b|\b(?:input|output)\s+tokens?\b|\btoken\s+(?:usage|consumption|count|total)\b|\btokens?\s+(?:used|consumed|spent)\b/i.test(value);
-}
-
 function shouldRouteToUsage(prompt: string, messages: ChatMessage[]): boolean {
-  if (isTokenUsageQuestion(prompt)) return true;
-  const previousUserQuestion = messages.filter((message) => message.role === "user").at(-1);
-  return Boolean(
-    previousUserQuestion
-    && isTokenUsageQuestion(previousUserQuestion.content)
-    && /\b(?:sql|sqlite|database|this|that|it|those|same|break\s+down|by\s+(?:model|operation|date|month))\b/i.test(prompt),
-  );
+  const usageQuestion = /\bhow\s+(?:much|many)\s+(?:input\s+|output\s+)?tokens?\b|\b(?:input|output)\s+tokens?\b|\btoken\s+(?:usage|consumption|costs?|count|total|spend)\b|\btokens?\s+(?:used|consumed|spent)\b|\b(?:llm|api|model)\s+(?:usage|spend)\b|\b(?:cost|spend)\b.*\b(?:tokens?|last (?:answer|response|question)|this (?:chat|exchange))\b/i;
+  if (usageQuestion.test(prompt)) return true;
+
+  const previous = messages.filter((message) => message.role === "user").at(-1);
+  return previous?.scope === "usage"
+    && /^(?:and\s+)?(?:how about|what about|break (?:it|that) down|by |for the last|show (?:it|that))\b.*\b(?:model|operation|date|day|week|month|year|sql|costs?|estimates?)s?\b/i.test(prompt);
 }
 
 function initials(name: string): string {
@@ -93,7 +81,11 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [tickerInput, setTickerInput] = useState("");
   const [range, setRange] = useState("");
+  const [chartPreference, setChartPreference] = useState<ChartMode>("line");
   const [snapshot, setSnapshot] = useState<StockSnapshot | null>(null);
+  const candlesAvailable = snapshot?.chart.some(hasCandlestickData) ?? false;
+  const chartMode = candlesAvailable ? chartPreference : "line";
+
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [snapshotError, setSnapshotError] = useState("");
   const [listError, setListError] = useState("");
@@ -107,17 +99,15 @@ export default function App() {
   const [consoleExpanded, setConsoleExpanded] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState("");
-  const [queryScope, setQueryScope] = useState<"research" | "usage">("research");
   const [chatBusy, setChatBusy] = useState(false);
   const [chatError, setChatError] = useState("");
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = window.localStorage.getItem("atlas-theme");
     if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
     return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
   });
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatBodyRef = useRef<HTMLDivElement>(null);
   const cancelRequestedRef = useRef(false);
 
   const refreshCompanies = useCallback(async (preferred?: string) => {
@@ -187,7 +177,8 @@ export default function App() {
   }, [selected, range]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const body = chatBodyRef.current;
+    if (body) body.scrollTop = body.scrollHeight;
   }, [messages, chatBusy]);
 
   useEffect(() => {
@@ -219,7 +210,6 @@ export default function App() {
   const percentChange = priceChange != null && previousClose ? (priceChange / previousClose) * 100 : null;
   const isPositive = (priceChange ?? 0) >= 0;
   const defaultCurrency = clientConfig?.market_data.default_currency ?? "";
-  const companyWebsite = safeWebsite(quote?.website);
 
   async function addCompany(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -298,30 +288,18 @@ export default function App() {
     event.preventDefault();
     const prompt = question.trim();
     if (!prompt || chatBusy || !clientConfig) return;
-    const autoRouteToUsage = queryScope === "research" && shouldRouteToUsage(prompt, messages);
-    const requestScope = autoRouteToUsage ? "usage" : queryScope;
-    const relevantMessages = autoRouteToUsage
-      ? messages.filter((message) => message.role === "user" && isTokenUsageQuestion(message.content))
-      : messages.filter((message) => message.scope === requestScope);
+    const requestScope = shouldRouteToUsage(prompt, messages) ? "usage" : "research";
+    const relevantMessages = messages.filter((message) => message.scope === requestScope);
     const history = relevantMessages
       .slice(-clientConfig.query.max_history_messages)
       .map(({ role, content }) => ({
         role,
         content: content.slice(0, clientConfig.query.max_history_message_chars),
       }));
+    const questionMessage = makeMessage("user", prompt, requestScope);
     setQuestion("");
     setChatError("");
-    if (autoRouteToUsage) setQueryScope("usage");
-    setMessages((items) => {
-      const withUsageHistory = autoRouteToUsage
-        ? items.map((message) => (
-          message.role === "user" && isTokenUsageQuestion(message.content)
-            ? { ...message, scope: "usage" as const }
-            : message
-        ))
-        : items;
-      return [...withUsageHistory, makeMessage("user", prompt, requestScope)];
-    });
+    setMessages((items) => [...items, questionMessage]);
     setChatBusy(true);
     try {
       const job = requestScope === "usage"
@@ -332,7 +310,10 @@ export default function App() {
         () => undefined,
         clientConfig.frontend.job_poll_interval_ms,
       );
-      setMessages((items) => [...items, makeMessage("assistant", completed.output.trim() || "No answer was returned.", requestScope)]);
+      const answer = makeMessage("assistant", completed.output.trim() || "No answer was returned.", requestScope);
+      setMessages((items) => items.some((message) => message.id === questionMessage.id)
+        ? [...items, { ...answer, usageJobId: job.id }]
+        : items);
     } catch (error) {
       setChatError(error instanceof Error ? error.message : "The question could not be answered.");
     } finally {
@@ -380,7 +361,6 @@ export default function App() {
               onClick={() => {
                 setSelected(company.ticker);
                 setMessages([]);
-                setDetailsOpen(false);
               }}
             >
               <span className={`company-avatar avatar-${company.ticker.charCodeAt(0) % 5}`}>{initials(company.name)}</span>
@@ -464,7 +444,6 @@ export default function App() {
         <header className="topbar">
           <div className="breadcrumb"><span>Research</span><span className="crumb-slash">/</span><strong>{selected || "Overview"}</strong></div>
           <div className="topbar-actions">
-            <div className="topbar-note"><span className="shield-icon">◆</span> Grounded in your saved research</div>
             <button
               className="theme-toggle"
               type="button"
@@ -520,201 +499,185 @@ export default function App() {
                 </button>
               </section>
 
-              <section className="market-card" aria-label="Stock market overview">
-                <div className="market-topline">
-                  <div>
-                    <div className="section-eyebrow">MARKET OVERVIEW <span className="live-dot" /> {quote?.market_state || "LATEST DATA"}</div>
-                    {snapshotLoading && <div className="loading-inline"><span className="spinner small" />Updating market data…</div>}
-                    {snapshotError && <div className="inline-error" role="alert">{snapshotError}</div>}
-                    {quote && (
-                      <div className="price-line">
-                        <strong>{money(currentPrice, quote.currency || defaultCurrency)}</strong>
-                        {priceChange != null && (
-                          <span className={`price-change ${isPositive ? "positive" : "negative"}`}>
-                            <span>{isPositive ? "↗" : "↘"}</span>
-                            {money(Math.abs(priceChange), quote.currency || defaultCurrency)} ({percentChange?.toFixed(2)}%)
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <div className="market-subline">
-                      {quote
-                        ? `${shortTime(quote.quote_time)} · ${quote.quote_source === "alpaca" ? "Alpaca IEX" : "Yahoo Finance"}`
-                        : "Live quote and price history"}
+              <div className="research-layout">
+                <section className="chat-card">
+                  <div className="chat-header">
+                    <div className="chat-heading-icon">✳</div>
+                    <div className="chat-heading-copy">
+                      <h2>Ask your research</h2>
+                      <p>Answers are grounded in saved SEC filings and stock information.</p>
                     </div>
-                    {quote?.quote_source === "yahoo_fallback" && (
-                      <div className="market-fallback-note">
-                        Alpaca is unavailable; displaying Yahoo Finance backup data.
-                      </div>
-                    )}
-                    {quote?.quote_source === "chart_fallback" && (
-                      <div className="market-fallback-note">
-                        Yahoo quote details are rate-limited; showing available chart data. Some metrics are unavailable.
-                      </div>
-                    )}
-                    {quote?.quote_source === "alpaca" && (
-                      <div className="market-fallback-note">
-                        {quote.fundamentals_source === "yahoo"
-                          ? "Prices use Alpaca IEX; company fundamentals are supplemented by Yahoo Finance."
-                          : "Prices use Alpaca IEX. Yahoo Finance fundamentals are unavailable, so some company metrics may be missing."}
-                      </div>
-                    )}
+                    <button
+                      className="new-chat-button"
+                      type="button"
+                      onClick={() => {
+                        setMessages([]);
+                        setQuestion("");
+                        setChatError("");
+                      }}
+                      disabled={chatBusy || (!messages.length && !question)}
+                    >
+                      + New chat
+                    </button>
                   </div>
-                  <div className="range-tabs" role="group" aria-label="Chart range">
-                    {(clientConfig?.frontend.stock_chart_ranges ?? []).map((item) => (
-                      <button className={range === item ? "active" : ""} key={item} onClick={() => setRange(item)}>
-                        {item.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {snapshotLoading && !snapshot ? (
-                  <div className="chart-skeleton"><span className="spinner" />Loading price history</div>
-                ) : snapshot ? (
-                  <Chart points={snapshot.chart} currency={quote?.currency || defaultCurrency} />
-                ) : (
-                  <div className="chart-empty">Stock information is not available yet. Try refreshing the company list or add the ticker again.</div>
-                )}
-
-                {quote && (
-                  <div className="market-stats">
-                    <Stat label="Market cap" value={money(quote.market_cap, quote.currency || defaultCurrency, true)} />
-                    <Stat label="52-week high" value={money(quote.fifty_two_week_high, quote.currency || defaultCurrency)} />
-                    <Stat label="52-week low" value={money(quote.fifty_two_week_low, quote.currency || defaultCurrency)} />
-                    <Stat label="Day range" value={quote.day_range || "—"} note="Today" />
-                    <Stat label="Volume" value={number(quote.volume)} />
-                    <Stat label="Average volume" value={number(quote.average_volume)} />
-                  </div>
-                )}
-              </section>
-
-              <button
-                className={`details-toggle ${detailsOpen ? "open" : ""}`}
-                onClick={() => setDetailsOpen((open) => !open)}
-                aria-expanded={detailsOpen}
-              >
-                <span className="details-toggle-icon">▤</span>
-                <span><strong>Company details</strong><small>Valuation, profile, and trading information</small></span>
-                <span className="details-chevron">{detailsOpen ? "⌃" : "⌄"}</span>
-              </button>
-              {detailsOpen && quote && (
-                <section className="details-panel">
-                  <div className="details-grid">
-                    <Stat label="Previous close" value={money(quote.previous_close, quote.currency || defaultCurrency)} />
-                    <Stat label="Open" value={money(quote.open, quote.currency || defaultCurrency)} />
-                    <Stat label="P/E ratio" value={quote.trailing_pe?.toFixed(2) ?? "—"} />
-                    <Stat label="Beta" value={quote.beta?.toFixed(2) ?? "—"} />
-                    <Stat label="Dividend yield" value={quote.dividend_yield == null ? "—" : `${(quote.dividend_yield * 100).toFixed(2)}%`} />
-                    <Stat label="Price to book" value={quote.price_to_book?.toFixed(2) ?? "—"} />
-                  </div>
-                  {quote.long_business_summary && <p className="business-summary">{quote.long_business_summary}</p>}
-                  {companyWebsite && <a className="website-link" href={companyWebsite} target="_blank" rel="noreferrer">{companyWebsite} <span>↗</span></a>}
-                  <p className="market-disclaimer">Market information is provided for research purposes and may be delayed. Verify current figures with your broker or data provider.</p>
-                </section>
-              )}
-
-              <section className="chat-card">
-                <div className="chat-header">
-                  <div className="chat-heading-icon">✳</div>
-                  <div className="chat-heading-copy">
-                    <h2>{queryScope === "usage" ? "Ask about token usage" : "Ask your research"}</h2>
-                    <p>{queryScope === "usage" ? "Answers use metrics from your local SQLite database." : "Answers are grounded in saved SEC filings and stock information."}</p>
-                  </div>
-                  <select
-                    className="chat-scope"
-                    aria-label="Question scope"
-                    value={queryScope}
-                    onChange={(event) => setQueryScope(event.target.value === "usage" ? "usage" : "research")}
-                  >
-                    <option value="research">SEC + stock</option>
-                    <option value="usage">Token usage</option>
-                  </select>
-                  <span className="chat-context">{queryScope === "usage" ? "Local SQLite" : `${companies.length} indexed`}</span>
-                  <button
-                    className="new-chat-button"
-                    type="button"
-                    onClick={() => {
-                      setMessages([]);
-                      setQuestion("");
-                      setChatError("");
-                    }}
-                    disabled={chatBusy || (!messages.length && !question)}
-                  >
-                    + New chat
-                  </button>
-                </div>
-
-                <div className="chat-body" aria-live="polite">
-                  {!messages.length ? (
-                    <div className="chat-welcome">
-                      <div className="assistant-avatar">✳</div>
-                      <div className="chat-intro">
-                        <strong>{queryScope === "usage" ? "What usage metrics do you need?" : "What would you like to understand?"}</strong>
-                        <p>{queryScope === "usage"
-                          ? "Ask about input/output tokens, estimated events, models, or usage by operation."
-                          : `Ask about ${currentCompany.name}, compare companies, or explore a filing detail.`}</p>
-                        <div className="suggestions">
-                          {queryScope === "usage" ? (
-                            <>
-                              <button onClick={() => useSuggestion("Summarize input and output tokens by operation for the last 30 days.")}>Tokens by operation</button>
-                              <button onClick={() => useSuggestion("How many usage events were estimated versus provider-reported?")}>Estimated events</button>
-                            </>
-                          ) : (
-                            <>
-                              <button onClick={() => useSuggestion(`What are the key risks reported by ${currentCompany.name}?`)}>What are the key risks?</button>
-                              <button onClick={() => useSuggestion(`Summarize the recent financial trends for ${currentCompany.name}.`)}>Summarize financial trends</button>
-                            </>
-                          )}
+                  <div className="chat-body" ref={chatBodyRef} role="region" aria-label="Chat messages" aria-live="polite" tabIndex={0}>
+                    {!messages.length ? (
+                      <div className="chat-welcome">
+                        <div className="assistant-avatar">✳</div>
+                        <div className="chat-intro">
+                          <strong>What would you like to understand?</strong>
+                          <p>Ask about {currentCompany.name}, compare companies, or explore a filing detail.</p>
+                          <div className="suggestions">
+                            <button onClick={() => useSuggestion(`What are the key risks reported by ${currentCompany.name}?`)}>What are the key risks?</button>
+                            <button onClick={() => useSuggestion(`Summarize the recent financial trends for ${currentCompany.name}.`)}>Summarize financial trends</button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : messages.map((message) => (
-                    <div className={`chat-message ${message.role}`} key={message.id}>
-                      {message.role === "assistant" && <div className="assistant-avatar">✳</div>}
-                      <div className="message-bubble">
-                        <span className="message-label">{message.role === "assistant" ? "ATLAS" : "YOU"}</span>
-                        {message.role === "assistant" ? (
-                          <div className="message-content">
-                            <AssistantResponse content={message.content} />
-                          </div>
-                        ) : (
-                          <p>{message.content}</p>
-                        )}
+                    ) : messages.map((message) => (
+                      <div className={`chat-message ${message.role}`} key={message.id}>
+                        {message.role === "assistant" && <div className="assistant-avatar">✳</div>}
+                        <div className="message-bubble">
+                          <span className="message-label">{message.role === "assistant" ? "ATLAS" : "YOU"}</span>
+                          {message.role === "assistant" ? (
+                            <div className="message-content">
+                              <AssistantResponse content={message.content} />
+                            </div>
+                          ) : (
+                            <p>{message.content}</p>
+                          )}
+                          {message.role === "assistant" && message.usageJobId && <UsageLine jobId={message.usageJobId} />}
+                        </div>
                       </div>
+                    ))}
+                    {chatBusy && (
+                      <div className="chat-message assistant">
+                        <div className="assistant-avatar">✳</div>
+                        <div className="message-bubble"><span className="message-label">ATLAS</span><div className="typing-indicator"><i /><i /><i /> Preparing your answer</div></div>
+                      </div>
+                    )}
+                    {chatError && <div className="chat-error" role="alert">{chatError}</div>}
+                  </div>
+
+                  <form className="chat-form" onSubmit={submitQuestion}>
+                    <label className="sr-only" htmlFor="chat-question">Ask a question</label>
+                    <textarea
+                      id="chat-question"
+                      rows={1}
+                      maxLength={clientConfig?.query.max_question_chars}
+                      value={question}
+                      onChange={(event) => setQuestion(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          event.currentTarget.form?.requestSubmit();
+                        }
+                      }}
+                      placeholder="Ask a question…"
+                      disabled={chatBusy || !clientConfig}
+                    />
+                    <button type="submit" disabled={chatBusy || !clientConfig || !question.trim()} aria-label="Send question">↑</button>
+                    <div className="chat-footnote">
+                      <span>Enter to send · Shift + Enter for a new line</span>
+                      <button className="usage-question" type="button" disabled={chatBusy}
+                        onClick={() => useSuggestion("How many tokens have I used, and what is the estimated cost by model?")}>
+                        Ask about token usage
+                      </button>
                     </div>
-                  ))}
-                  {chatBusy && (
-                    <div className="chat-message assistant">
-                      <div className="assistant-avatar">✳</div>
-                      <div className="message-bubble"><span className="message-label">ATLAS</span><div className="typing-indicator"><i /><i /><i /> {queryScope === "usage" ? "Querying local usage metrics" : "Searching saved context"}</div></div>
+                  </form>
+                </section>
+                <section className="market-card" aria-label="Stock market overview">
+                  <div className="market-heading">
+                    <div className="section-eyebrow">MARKET OVERVIEW <span className="live-dot" /> {quote?.market_state || "LATEST DATA"}</div>
+                    <div className="range-tabs" role="group" aria-label="Chart style">
+                      <button type="button" className={chartMode === "line" ? "active" : ""}
+                        aria-pressed={chartMode === "line"} onClick={() => setChartPreference("line")}>
+                        Line
+                      </button>
+                      <button type="button" className={chartMode === "candlestick" ? "active" : ""}
+                        aria-pressed={chartMode === "candlestick"} onClick={() => setChartPreference("candlestick")}
+                        disabled={!candlesAvailable} title={!candlesAvailable ? "Open, high, and low prices are unavailable" : undefined}>
+                        Candlesticks
+                      </button>
+                    </div>
+                  </div>
+                  <div className="market-topline">
+                    <div>
+                      {snapshotLoading && <div className="loading-inline"><span className="spinner small" />Updating market data…</div>}
+                      {snapshotError && <div className="inline-error" role="alert">{snapshotError}</div>}
+                      {quote && (
+                        <div className="price-line">
+                          <strong>{money(currentPrice, quote.currency || defaultCurrency)}</strong>
+                          {priceChange != null && (
+                            <span className={`price-change ${isPositive ? "positive" : "negative"}`}>
+                              <span>{isPositive ? "↗" : "↘"}</span>
+                              {money(Math.abs(priceChange), quote.currency || defaultCurrency)} ({percentChange?.toFixed(2)}%)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className="market-subline">
+                        {quote
+                          ? `${shortTime(quote.quote_time)} · ${quote.quote_source === "alpaca" ? "Alpaca IEX" : "Yahoo Finance"}`
+                          : "Live quote and price history"}
+                      </div>
+                      {quote?.quote_source === "yahoo_fallback" && (
+                        <div className="market-fallback-note">
+                          Alpaca is unavailable; displaying Yahoo Finance backup data.
+                        </div>
+                      )}
+                      {quote?.quote_source === "chart_fallback" && (
+                        <div className="market-fallback-note">
+                          Yahoo quote details are rate-limited; showing available chart data. Some metrics are unavailable.
+                        </div>
+                      )}
+                      {quote?.quote_source === "alpaca" && (
+                        <div className="market-fallback-note">
+                          {quote.fundamentals_source === "yahoo"
+                            ? "Prices use Alpaca IEX; company fundamentals are supplemented by Yahoo Finance."
+                            : "Prices use Alpaca IEX. Yahoo Finance fundamentals are unavailable, so some company metrics may be missing."}
+                        </div>
+                      )}
+                    </div>
+                    <div className="range-tabs" role="group" aria-label="Chart range">
+                      {(clientConfig?.frontend.stock_chart_ranges ?? []).map((item) => (
+                        <button type="button" className={range === item ? "active" : ""} key={item}
+                          aria-pressed={range === item} onClick={() => setRange(item)}>
+                          {item.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {snapshotLoading && !snapshot ? (
+                    <div className="chart-skeleton"><span className="spinner" />Loading price history</div>
+                  ) : snapshot ? (
+                    <Chart points={snapshot.chart} currency={quote?.currency || defaultCurrency} mode={chartMode} />
+                  ) : (
+                    <div className="chart-empty">Stock information is not available yet. Try refreshing the company list or add the ticker again.</div>
+                  )}
+
+                  {quote && (
+                    <div className="market-stats">
+                      <Stat label="Market cap" value={money(quote.market_cap, quote.currency || defaultCurrency, true)} />
+                      <Stat label="52-week high" value={money(quote.fifty_two_week_high, quote.currency || defaultCurrency)} />
+                      <Stat label="52-week low" value={money(quote.fifty_two_week_low, quote.currency || defaultCurrency)} />
+                      <Stat label="Day range" value={quote.day_range || "—"} note="Today" />
+                      <Stat label="Volume" value={number(quote.volume)} />
+                      <Stat label="Average volume" value={number(quote.average_volume)} />
                     </div>
                   )}
-                  {chatError && <div className="chat-error" role="alert">{chatError}</div>}
-                  <div ref={chatEndRef} />
-                </div>
-
-                <form className="chat-form" onSubmit={submitQuestion}>
-                  <label className="sr-only" htmlFor="chat-question">{queryScope === "usage" ? "Ask about token usage" : "Ask about saved research"}</label>
-                  <textarea
-                    id="chat-question"
-                    rows={1}
-                    maxLength={clientConfig?.query.max_question_chars}
-                    value={question}
-                    onChange={(event) => setQuestion(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        event.currentTarget.form?.requestSubmit();
-                      }
-                    }}
-                    placeholder={queryScope === "usage" ? "Ask about token usage…" : "Ask a question about your research…"}
-                    disabled={chatBusy || !clientConfig}
-                  />
-                  <button type="submit" disabled={chatBusy || !clientConfig || !question.trim()} aria-label="Send question">↑</button>
-                  <div className="chat-footnote"><span>Enter to send · Shift + Enter for a new line</span><span>{queryScope === "usage" ? "SQLite usage metrics" : "SEC + stock context"}</span></div>
-                </form>
-              </section>
+                </section>
+              </div>
+              <CompanyOverview
+                key={currentCompany.ticker}
+                company={currentCompany}
+                sector={quote?.symbol === currentCompany.ticker ? quote?.sector : null}
+                industry={quote?.symbol === currentCompany.ticker ? quote?.industry : null}
+                businessSummary={quote?.symbol === currentCompany.ticker ? quote?.long_business_summary : null}
+                onPrompt={useSuggestion}
+                formatMoney={money}
+              />
               <footer className="page-footer">Corporate Atlas · Research workspace <span>Market data may be delayed.</span></footer>
             </div>
           )}

@@ -151,6 +151,7 @@ class JobManager:
         try:
             worker_environment = os.environ.copy()
             worker_environment["PYTHONIOENCODING"] = "utf-8"
+            worker_environment["ATLAS_USAGE_JOB_ID"] = self.job["id"]
             process = subprocess.Popen(args, cwd=ROOT, stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT, text=True,
                                        encoding="utf-8", env=worker_environment,

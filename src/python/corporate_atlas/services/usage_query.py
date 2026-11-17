@@ -11,7 +11,13 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from corporate_atlas.core.llm_config import get_chat_model, get_model_identifier
+from corporate_atlas.core.llm_config import (
+    ModelResponseTextError,
+    extract_response_text,
+    get_chat_model,
+    get_model_identifier,
+)
+from corporate_atlas.core.response_format import CHART_INSTRUCTIONS
 from corporate_atlas.core.token_usage import record_chat_usage, usage_db_path
 from corporate_atlas.settings import SETTINGS
 
@@ -22,6 +28,8 @@ USAGE_COLUMNS = {
     "input_tokens",
     "output_tokens",
     "estimated",
+    "cost_usd",
+    "job_id",
 }
 USAGE_FUNCTIONS = {
     "avg",
@@ -41,10 +49,7 @@ USAGE_FUNCTIONS = {
 
 
 def _sql_from_response(response: Any) -> str:
-    content = getattr(response, "content", response)
-    if not isinstance(content, str):
-        raise ValueError("The model did not return SQL text.")
-    query = content.strip()
+    query = extract_response_text(response)
     fenced = re.fullmatch(r"```(?:sql)?\s*(.*?)\s*```", query, flags=re.IGNORECASE | re.DOTALL)
     if fenced:
         query = fenced.group(1).strip()
@@ -103,6 +108,17 @@ def _execute_usage_query(query: str, db_path: Path | None = None) -> list[dict[s
         connection.close()
 
 
+def _invoke_usage_model(model, model_name, operation, messages, missing_text_message):
+    for attempt in range(2):
+        response = model.invoke(messages)
+        record_chat_usage(operation, model_name, messages, response)
+        try:
+            return extract_response_text(response)
+        except ModelResponseTextError as exc:
+            if attempt == 1:
+                raise ValueError(missing_text_message) from exc
+
+
 def answer_usage_question(
     question: str,
     *,
@@ -134,7 +150,9 @@ def answer_usage_question(
                 "Use prior user requests only to resolve references in the current request; "
                 "ignore prior assistant answers. "
                 "The only table is token_usage(recorded_at, operation, model, input_tokens, "
-                "output_tokens, estimated). recorded_at is an ISO-8601 UTC timestamp; "
+                "output_tokens, estimated, cost_usd, job_id). recorded_at is an ISO-8601 UTC timestamp. "
+                "cost_usd is the estimated USD cost saved at recording time, or NULL if unavailable. "
+                "job_id identifies the job if recorded. "
                 "estimated is 0 for provider-reported usage and 1 for an estimate. "
                 "Use only those columns and this table. Do not query schema metadata, "
                 "other tables, or use writes, pragmas, comments, or multiple statements. "
@@ -148,9 +166,11 @@ def answer_usage_question(
             )
         ),
     ]
-    sql_response = model.invoke(sql_messages)
-    record_chat_usage("usage_sql_generation", model_name, sql_messages, sql_response)
-    sql = _sql_from_response(sql_response)
+    sql_text = _invoke_usage_model(
+        model, model_name, "usage_sql_generation", sql_messages,
+        "The model returned no text for the usage lookup. Try asking a more specific token-usage question.",
+    )
+    sql = _sql_from_response(sql_text)
     rows = _execute_usage_query(sql, db_path)
 
     answer_messages = [
@@ -160,7 +180,7 @@ def answer_usage_question(
                 "Use prior user requests only to resolve references, and answer the current "
                 "question rather than earlier questions. "
                 "Do not invent values. Distinguish estimated usage from provider-reported usage. "
-                "If there are no rows, state that no matching usage records were found."
+                "If there are no rows, state that no matching usage records were found. " + CHART_INSTRUCTIONS
             )
         ),
         HumanMessage(
@@ -173,9 +193,7 @@ def answer_usage_question(
             )
         ),
     ]
-    answer_response = model.invoke(answer_messages)
-    record_chat_usage("usage_sql_answer", model_name, answer_messages, answer_response)
-    answer = getattr(answer_response, "content", answer_response)
-    if not isinstance(answer, str) or not answer.strip():
-        raise ValueError("The model did not return a token-usage answer.")
-    return answer.strip()
+    return _invoke_usage_model(
+        model, model_name, "usage_sql_answer", answer_messages,
+        "The model returned no text while summarizing usage. Try asking again.",
+    )

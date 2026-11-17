@@ -81,4 +81,33 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   scope: "research" | "usage";
+  usageJobId?: string;
+};
+
+export type UsageReport = {
+  models: Array<{
+    model: string;
+    input_tokens: number;
+    output_tokens: number;
+    estimated_events: number;
+    cost_usd: number | null;
+    unpriced_events: number;
+  }>;
+};
+
+export type AnnualFinancialPeriod = {
+  period_end: string;
+  currency: string;
+  revenue: number;
+  net_income: number | null;
+  net_margin: number | null;
+};
+
+export type CompanyOverviewData = {
+  financials: {
+    periods: AnnualFinancialPeriod[];
+    revenue_growth: number | null;
+    source: string;
+  } | null;
+  profile: { text: string; source: string } | null;
 };

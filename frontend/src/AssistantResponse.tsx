@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { BarChart, parseAssistantCharts } from "./BarChart";
+import { BarChart, LineChart, parseAssistantCharts } from "./BarChart";
 
 function Markdown({ children }: { children: string }) {
   return <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>;
@@ -22,7 +22,10 @@ export function AssistantResponse({ content }: { content: string }) {
     if (charts) {
       output.push(
         <div className="assistant-charts" key={`charts-${partIndex++}`}>
-          {charts.map((chart, index) => <BarChart key={`${chart.title}-${index}`} chart={chart} />)}
+          {charts.map((chart, index) => {
+            const Component = chart.type === "line" ? LineChart : BarChart;
+            return <Component key={`${chart.title}-${index}`} chart={chart} />;
+          })}
         </div>,
       );
     } else {

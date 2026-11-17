@@ -61,11 +61,12 @@ def company_information():
             for ticker in sorted(set(filings) | graphs | set(vectors))]
 
 
-def company_label(ticker):
+def company_label(ticker, *, filing_root=None):
     """Use the filing's registrant name when available, falling back to its ticker."""
     import re
     from bs4 import BeautifulSoup
-    for path in sorted((FILINGS_ROOT / ticker).glob('*/*'), reverse=True):
+    root = FILINGS_ROOT if filing_root is None else filing_root
+    for path in sorted((root / ticker).glob('*/*'), reverse=True):
         if path.suffix.lower() in {'.htm', '.html'}:
             soup = BeautifulSoup(path.read_text(encoding='utf-8', errors='replace'), 'html.parser')
             name = soup.find(attrs={'name': re.compile(r'^dei:EntityRegistrantName$', re.I)})

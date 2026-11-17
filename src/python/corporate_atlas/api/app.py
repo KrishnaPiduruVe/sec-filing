@@ -8,7 +8,7 @@ import re
 import threading
 import time
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
@@ -21,7 +21,9 @@ from importlib.resources import files
 
 from corporate_atlas.services.jobs import JobManager, inventory
 from corporate_atlas.services.inventory import filing_information, company_label
-from corporate_atlas.core.token_usage import usage_summary
+from corporate_atlas.services.company_overview import company_overview
+from corporate_atlas.core.llm_config import get_model_identifier
+from corporate_atlas.core.token_usage import model_usage, usage_summary
 from corporate_atlas.core.stock_market import (
     StockDataUnavailable,
     fetch_stock_snapshot,
@@ -35,6 +37,10 @@ TICKER_PATTERN = (
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra='forbid')
+
+
+class ChatUsageRequest(InputModel):
+    job_ids: list[Annotated[str, Field(pattern=r'^[0-9a-f]{16}$')]]
 
 
 class PrepareRequest(InputModel):
@@ -284,6 +290,12 @@ def create_app(service=None):
             raise HTTPException(422, 'Invalid ticker.')
         return {'label': company_label(ticker.upper())}
 
+    @application.get('/companies/{ticker}/overview', tags=['Data'])
+    def overview(ticker: str):
+        if not re.fullmatch(TICKER_PATTERN, ticker):
+            raise HTTPException(422, 'Invalid ticker.')
+        return company_overview(ticker.upper())
+
     @application.get('/stocks', tags=['Data'])
     def stocks():
         with jobs.lock:
@@ -319,10 +331,24 @@ def create_app(service=None):
         except ValueError as exc:
             raise HTTPException(404, str(exc)) from exc
 
+    @application.post('/usage/chat', tags=['Data'])
+    def chat_usage(data: ChatUsageRequest):
+        return {'models': model_usage(job_ids=data.job_ids)}
+
     @application.get('/usage', tags=['Data'])
-    def usage():
+    def usage(job_id: str | None = None):
+        if job_id is not None:
+            return {'models': model_usage(job_id)}
+        try:
+            chat_model = get_model_identifier()
+        except ValueError:
+            chat_model = None
         columns = ['operation', 'input_tokens', 'output_tokens', 'events', 'estimated_events']
-        return {'rows': [dict(zip(columns, row)) for row in usage_summary()]}
+        return {
+            'rows': [dict(zip(columns, row)) for row in usage_summary()],
+            'models': model_usage(),
+            'chat_model': chat_model,
+        }
 
     frontend = Path(
         str(files('corporate_atlas_ui') / SETTINGS.paths.frontend_static_dir)

@@ -1,8 +1,11 @@
 import type { ChartPoint } from "./types";
 
+export type ChartMode = "line" | "candlestick";
+
 type Props = {
   points: ChartPoint[];
   currency: string;
+  mode: ChartMode;
 };
 
 const width = 900;
@@ -21,17 +24,23 @@ function price(value: number, currency: string): string {
   }
 }
 
-export default function Chart({ points, currency }: Props) {
+export function hasCandlestickData(point: ChartPoint): point is ChartPoint & {
+  open: number;
+  high: number;
+  low: number;
+} {
+  return point.open != null && point.high != null && point.low != null;
+}
+
+export default function Chart({ points, currency, mode }: Props) {
   if (!points.length) {
     return <div className="chart-empty">Price history isn’t available for this period.</div>;
   }
 
-  const candles = points.some((point) => point.open != null && point.high != null && point.low != null);
-  const values = points.flatMap((point) => [
-    point.high ?? point.close,
-    point.low ?? point.close,
-    point.close,
-  ]);
+  const candles = mode === "candlestick" && points.some(hasCandlestickData);
+  const values = candles
+    ? points.filter(hasCandlestickData).flatMap(({ high, low }) => [high, low])
+    : points.map(({ close }) => close);
   const rawMin = Math.min(...values);
   const rawMax = Math.max(...values);
   const span = Math.max(rawMax - rawMin, rawMax * 0.006, 0.01);
@@ -78,9 +87,8 @@ export default function Chart({ points, currency }: Props) {
         {candles ? (
           <>
             {coordinates.map(({ x, point }, index) => {
-              const open = point.open ?? point.close;
-              const high = point.high ?? Math.max(open, point.close);
-              const low = point.low ?? Math.min(open, point.close);
+              if (!hasCandlestickData(point)) return null;
+              const { open, high, low } = point;
               const rising = point.close >= open;
               const yOpen = yForPrice(open);
               const yClose = yForPrice(point.close);

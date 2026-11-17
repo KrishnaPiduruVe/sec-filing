@@ -14,7 +14,7 @@ class PacedIndexerTests(unittest.TestCase):
         filing.parent.mkdir(parents=True)
         filing.write_text('<p>' + 'sample text ' * 50 + '</p>')
         self.store = MagicMock()
-        self.store.get.return_value = {'ids': ['stale']}
+        self.store.get.return_value = {'ids': ['stale', 'stock:AAPL', 'wikimedia:AAPL']}
         for name, replacement in (
             ('embedding_settings', MagicMock(return_value=('google_genai', 'test', ''))),
             ('open_vector_store', MagicMock(return_value=self.store)),

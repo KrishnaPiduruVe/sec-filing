@@ -115,3 +115,11 @@ monitor_interval_seconds = 0.25
 
 [token_usage]
 default_tokenizer_model = "gpt-4o-mini"
+
+# Standard paid API list prices in USD per million tokens.
+# https://ai.google.dev/gemini-api/docs/pricing/
+# https://developers.openai.com/api/docs/models/gpt-4o-mini
+[token_usage.usd_per_million_tokens]
+"gemini-3.5-flash-lite" = { input = 0.30, output = 2.50 }
+"google_genai:models/gemini-embedding-001" = { input = 0.15, output = 0 }
+"gpt-4o-mini" = { input = 0.15, output = 0.60 }

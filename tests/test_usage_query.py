@@ -138,3 +138,56 @@ def test_usage_sql_authorizer_rejects_non_usage_tables(tmp_path):
             "JOIN sqlite_master AS schema_data ON 1=1",
             database,
         )
+
+
+def test_usage_costs_and_job_ids_are_saved_in_legacy_database(tmp_path, monkeypatch):
+    from corporate_atlas.core.token_usage import model_usage, record_usage
+
+    database = tmp_path / "usage.sqlite3"
+    _create_usage_db(database)
+    assert model_usage("first", database) == []
+
+    monkeypatch.setenv("ATLAS_USAGE_JOB_ID", "first")
+    record_usage("answer", "gemini-3.5-flash-lite", 1000, 100, estimated=False, db_path=database)
+    monkeypatch.setenv("ATLAS_USAGE_JOB_ID", "second")
+    record_usage("answer", "unknown-model", 500, 100, estimated=True, db_path=database)
+
+    first, = model_usage("first", database)
+    assert first["input_tokens"] == 1000
+    assert first["output_tokens"] == 100
+    assert first["cost_usd"] == pytest.approx(0.00055)
+    assert model_usage("second", database)[0]["unpriced_events"] == 1
+    with sqlite3.connect(database) as connection:
+        saved, = connection.execute("SELECT cost_usd FROM token_usage WHERE job_id = 'first'").fetchone()
+    assert saved == pytest.approx(0.00055)
+    assert len(model_usage(db_path=database)) == 4
+    assert model_usage(db_path=database, job_ids=["first", "first"]) == [first]
+    assert model_usage(db_path=database, job_ids=[]) == []
+
+
+def test_usage_question_reads_text_blocks_and_retries_reasoning_only_reply(tmp_path, monkeypatch):
+    from langchain_core.messages import AIMessage
+    from unittest.mock import Mock
+
+    database = tmp_path / "usage.sqlite3"
+    _create_usage_db(database)
+    usage_log = Mock()
+    monkeypatch.setattr("corporate_atlas.services.usage_query.record_chat_usage", usage_log)
+
+    model = Mock()
+    model.invoke.side_effect = [
+        AIMessage(content=[{"type": "reasoning", "reasoning": "Compute total."}]),
+        AIMessage(content=[
+            {"type": "reasoning", "text": "This block is internal reasoning."},
+            {"type": "text", "text": "SELECT SUM(input_tokens) AS total FROM token_usage"},
+        ]),
+        AIMessage(content=[{"type": "text", "text": "You used 150 input tokens."}]),
+    ]
+
+    answer = answer_usage_question("How many input tokens did I use?", db_path=database, llm=model)
+
+    assert answer == "You used 150 input tokens."
+    assert [call.args[0] for call in usage_log.call_args_list] == [
+        "usage_sql_generation", "usage_sql_generation", "usage_sql_answer",
+    ]
+    assert '"total": 150' in model.invoke.call_args.args[0][1].content

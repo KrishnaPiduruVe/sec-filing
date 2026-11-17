@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sqlite3
@@ -86,6 +87,13 @@ def _usage_counts(response: Any) -> tuple[int, int] | None:
     return None
 
 
+def estimated_cost(model: str, input_tokens: int, output_tokens: int) -> float | None:
+    rate = SETTINGS.token_usage.usd_per_million_tokens.get(model)
+    if rate is None:
+        return None
+    return (input_tokens * rate.input + output_tokens * rate.output) / 1_000_000
+
+
 def record_usage(
     operation: str,
     model: str,
@@ -101,6 +109,7 @@ def record_usage(
     path = usage_db_path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as connection:
+        connection.execute("BEGIN IMMEDIATE")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS token_usage (
@@ -110,15 +119,23 @@ def record_usage(
                 model TEXT NOT NULL,
                 input_tokens INTEGER NOT NULL,
                 output_tokens INTEGER NOT NULL,
-                estimated INTEGER NOT NULL
+                estimated INTEGER NOT NULL,
+                job_id TEXT,
+                cost_usd REAL
             )
             """
         )
+        columns = {column[1] for column in connection.execute("PRAGMA table_info(token_usage)")}
+        if "job_id" not in columns:
+            connection.execute("ALTER TABLE token_usage ADD COLUMN job_id TEXT")
+        if "cost_usd" not in columns:
+            connection.execute("ALTER TABLE token_usage ADD COLUMN cost_usd REAL")
+        connection.execute("CREATE INDEX IF NOT EXISTS token_usage_job_id ON token_usage(job_id)")
         connection.execute(
             """
             INSERT INTO token_usage
-                (recorded_at, operation, model, input_tokens, output_tokens, estimated)
-            VALUES (?, ?, ?, ?, ?, ?)
+                (recorded_at, operation, model, input_tokens, output_tokens, estimated, job_id, cost_usd)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 datetime.now(timezone.utc).isoformat(),
@@ -127,6 +144,8 @@ def record_usage(
                 input_tokens,
                 output_tokens,
                 int(estimated),
+                os.getenv("ATLAS_USAGE_JOB_ID"),
+                estimated_cost(model, input_tokens, output_tokens),
             ),
         )
 
@@ -185,6 +204,51 @@ def usage_summary(db_path: Path | None = None) -> list[tuple[str, int, int, int,
             ORDER BY operation
             """
         ).fetchall()
+
+
+def model_usage(
+    job_id: str | None = None,
+    db_path: Path | None = None,
+    *,
+    job_ids: Sequence[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Summarize recorded token use and list-price estimates by model."""
+    if job_id is not None:
+        job_ids = [job_id]
+    path = usage_db_path(db_path)
+    if job_ids == [] or not path.is_file():
+        return []
+    with sqlite3.connect(path) as connection:
+        columns = {column[1] for column in connection.execute("PRAGMA table_info(token_usage)")}
+        if not columns or (job_ids is not None and "job_id" not in columns):
+            return []
+        condition = "WHERE job_id IN (SELECT value FROM json_each(?))" if job_ids is not None else ""
+        # Old rows have no saved estimate. Price those separately at today's configured rates.
+        cost_column = "cost_usd" if "cost_usd" in columns else "NULL"
+        rows = connection.execute(
+            f"""
+            SELECT model, SUM(input_tokens), SUM(output_tokens), SUM(estimated),
+                   SUM({cost_column}),
+                   SUM(CASE WHEN {cost_column} IS NULL THEN input_tokens ELSE 0 END),
+                   SUM(CASE WHEN {cost_column} IS NULL THEN output_tokens ELSE 0 END),
+                   COUNT(*) - COUNT({cost_column})
+            FROM token_usage {condition}
+            GROUP BY model ORDER BY model
+            """,
+            (json.dumps(list(job_ids)),) if job_ids is not None else (),
+        ).fetchall()
+
+    models = []
+    for model, input_tokens, output_tokens, estimates, saved_cost, missing_input, missing_output, missing_count in rows:
+        inferred = estimated_cost(model, missing_input, missing_output) if missing_count else None
+        cost = (
+            (saved_cost or 0) + (inferred or 0)
+            if saved_cost is not None or inferred is not None else None
+        )
+        models.append(dict(model=model, input_tokens=input_tokens, output_tokens=output_tokens,
+                           estimated_events=estimates, cost_usd=cost,
+                           unpriced_events=missing_count if inferred is None else 0))
+    return models
 
 
 def main() -> None:
