@@ -20,6 +20,30 @@ See [UI setup](readme_ui.md) and [API overview](WEB_APP.md) for details.
 The web preparation workflow skips graph extraction and uses vector retrieval
 by default; the graph-building CLI remains available as an explicit operation.
 
+### Stop the web application
+
+Press **Ctrl+C** in the terminal where you ran `python run_app.py`. Wait for
+the server to report that shutdown is complete.
+
+On macOS or Linux, you can also stop it from another terminal.
+
+1. Find the process listening on the app's port. Replace `8501` with the port
+   you passed to `--port` if you used a different one.
+
+   ```bash
+   lsof -nP -iTCP:8501 -sTCP:LISTEN
+   ```
+
+2. Confirm the PID belongs to the Corporate Atlas Uvicorn process, then send
+   it a termination signal. Replace `12345` with the PID from the first step.
+
+   ```bash
+   ps -p 12345 -o command=
+   kill -TERM 12345
+   ```
+
+3. Run the same `lsof` command again. No output means the port is free.
+
 ## Setup
 
 Use Python 3.10 or newer. Install the core dependencies and the integration
