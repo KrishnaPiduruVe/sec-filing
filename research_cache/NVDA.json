@@ -1,0 +1,100 @@
+{
+  "ticker": "NVDA",
+  "name": "NVIDIA",
+  "sector": "Semiconductors",
+  "cik": "0001045810",
+  "wiki": "Nvidia",
+  "color": "#91d579",
+  "tracked": true,
+  "profile": {
+    "title": "Nvidia",
+    "description": "American multinational technology company",
+    "summary": "Nvidia Corporation is an American multinational technology company headquartered in Santa Clara, California. The company develops graphics processing units (GPUs), systems on chips (SoCs), and application programming interfaces (APIs) for gaming, data science, high-performance computing, artificial intelligence (AI) hardware, and mobile and automotive applications. Founded in 1993 by Jensen Huang, Chris Malachowsky, and Curtis Priem, Nvidia is among the largest companies by market capitalization.",
+    "source_url": "https://en.wikipedia.org/wiki/Nvidia",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Nvidia",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2021",
+      "start": "2020-01-27",
+      "end": "2021-01-31",
+      "revenue": 16675000000,
+      "net_income": 4332000000,
+      "net_margin": 25.979010494752625,
+      "filed": "2022-03-18",
+      "accession": "0001045810-22-000036",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2021-02-01",
+      "end": "2022-01-30",
+      "revenue": 26914000000,
+      "net_income": 9752000000,
+      "net_margin": 36.23393029649996,
+      "filed": "2022-03-18",
+      "accession": "0001045810-22-000036",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2022-01-31",
+      "end": "2023-01-29",
+      "revenue": 26974000000,
+      "net_income": 4368000000,
+      "net_margin": 16.193371394676355,
+      "filed": "2025-02-26",
+      "accession": "0001045810-25-000023",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2024",
+      "start": "2023-01-30",
+      "end": "2024-01-28",
+      "revenue": 60922000000,
+      "net_income": 29760000000,
+      "net_margin": 48.84934834706674,
+      "filed": "2026-02-25",
+      "accession": "0001045810-26-000021",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2025",
+      "start": "2024-01-29",
+      "end": "2025-01-26",
+      "revenue": 130497000000,
+      "net_income": 72880000000,
+      "net_margin": 55.848027157712444,
+      "filed": "2026-02-25",
+      "accession": "0001045810-26-000021",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2026",
+      "start": "2025-01-27",
+      "end": "2026-01-25",
+      "revenue": 215938000000,
+      "net_income": 120067000000,
+      "net_margin": 55.60253406070261,
+      "filed": "2026-02-25",
+      "accession": "0001045810-26-000021",
+      "concept": "Revenues"
+    }
+  ],
+  "metrics": {
+    "revenue": 215938000000,
+    "net_income": 120067000000,
+    "net_margin": 55.60253406070261,
+    "revenue_growth": 65.47353579009479,
+    "period_end": "2026-01-25",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:41:07.779312+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json",
+  "financial_fetched_at": "2026-11-17T03:41:07.779312+00:00",
+  "profile_fetched_at": "2026-11-17T03:41:07.779312+00:00"
+}

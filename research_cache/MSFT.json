@@ -1,0 +1,98 @@
+{
+  "ticker": "MSFT",
+  "name": "Microsoft",
+  "sector": "Technology",
+  "cik": "0000789019",
+  "wiki": "Microsoft",
+  "color": "#65a9ff",
+  "tracked": true,
+  "profile": {
+    "title": "Microsoft",
+    "description": "American multinational technology conglomerate",
+    "summary": "Microsoft Corporation is an American multinational technology conglomerate headquartered in Redmond, Washington. The company became influential in the rise of personal computers through software like Windows and has since expanded into areas such as Internet services, cloud computing, artificial intelligence and video gaming among others. A Big Tech company, Microsoft is the largest software company by revenue, one of the most valuable public companies, and one of the most valuable brands globally.",
+    "source_url": "https://en.wikipedia.org/wiki/Microsoft",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Microsoft",
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2021",
+      "start": "2020-07-01",
+      "end": "2021-06-30",
+      "revenue": 168088000000,
+      "net_income": 61271000000,
+      "net_margin": 36.451739564989765,
+      "filed": "2023-07-27",
+      "accession": "0000950170-23-035122",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2021-07-01",
+      "end": "2022-06-30",
+      "revenue": 198270000000,
+      "net_income": 72738000000,
+      "net_margin": 36.68633681343622,
+      "filed": "2024-07-30",
+      "accession": "0000950170-24-087843",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2022-07-01",
+      "end": "2023-06-30",
+      "revenue": 211915000000,
+      "net_income": 72361000000,
+      "net_margin": 34.14623787839464,
+      "filed": "2025-07-30",
+      "accession": "0000950170-25-100235",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2024",
+      "start": "2023-07-01",
+      "end": "2024-06-30",
+      "revenue": 245122000000,
+      "net_income": 88136000000,
+      "net_margin": 35.955972944084984,
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2025",
+      "start": "2024-07-01",
+      "end": "2025-06-30",
+      "revenue": 281724000000,
+      "net_income": 101832000000,
+      "net_margin": 36.146015248967075,
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2026",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "revenue": 331839000000,
+      "net_income": 133749000000,
+      "net_margin": 40.30538905915218,
+      "filed": "2026-07-29",
+      "accession": "0001193125-26-323660",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    }
+  ],
+  "metrics": {
+    "revenue": 331839000000,
+    "net_income": 133749000000,
+    "net_margin": 40.30538905915218,
+    "revenue_growth": 17.788686799846666,
+    "period_end": "2026-06-30"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T02:15:42.928423+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json",
+  "financial_fetched_at": "2026-11-17T02:15:42.928423+00:00",
+  "profile_fetched_at": "2026-11-17T02:15:42.928423+00:00"
+}

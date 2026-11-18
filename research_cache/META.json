@@ -1,0 +1,100 @@
+{
+  "ticker": "META",
+  "name": "Meta Platforms",
+  "sector": "Technology",
+  "cik": "0001326801",
+  "wiki": "Meta_Platforms",
+  "color": "#929efa",
+  "tracked": true,
+  "profile": {
+    "title": "Meta Platforms",
+    "description": "American multinational technology conglomerate",
+    "summary": "Meta Platforms, Inc., headquartered in Menlo Park, California, is an American multinational technology company and is one of the Big Tech companies. Meta owns and operates several prominent social media platforms and communication services, including Facebook, Instagram, WhatsApp, Messenger, and Threads. The company also operates an advertising network for its own sites and third parties; as of 2023, advertising accounted for 97.8% of its total revenue.",
+    "source_url": "https://en.wikipedia.org/wiki/Meta_Platforms",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Meta_Platforms",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 85965000000,
+      "net_income": 29146000000,
+      "net_margin": 33.90449601582039,
+      "filed": "2023-02-02",
+      "accession": "0001326801-23-000013",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 117929000000,
+      "net_income": 39370000000,
+      "net_margin": 33.38449405998525,
+      "filed": "2024-02-02",
+      "accession": "0001326801-24-000012",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 116609000000,
+      "net_income": 23200000000,
+      "net_margin": 19.895548371051976,
+      "filed": "2025-01-30",
+      "accession": "0001326801-25-000017",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 134902000000,
+      "net_income": 39098000000,
+      "net_margin": 28.982520644616095,
+      "filed": "2026-01-29",
+      "accession": "0001628280-26-003942",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 164501000000,
+      "net_income": 62360000000,
+      "net_margin": 37.90858414234564,
+      "filed": "2026-01-29",
+      "accession": "0001628280-26-003942",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 200966000000,
+      "net_income": 60458000000,
+      "net_margin": 30.08369574952977,
+      "filed": "2026-01-29",
+      "accession": "0001628280-26-003942",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    }
+  ],
+  "metrics": {
+    "revenue": 200966000000,
+    "net_income": 60458000000,
+    "net_margin": 30.08369574952977,
+    "revenue_growth": 22.167038498246217,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:41:04.137189+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json",
+  "financial_fetched_at": "2026-11-17T03:41:04.137189+00:00",
+  "profile_fetched_at": "2026-11-17T03:41:04.137189+00:00"
+}

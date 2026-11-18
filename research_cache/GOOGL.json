@@ -1,0 +1,100 @@
+{
+  "ticker": "GOOGL",
+  "name": "Alphabet",
+  "sector": "Technology",
+  "cik": "0001652044",
+  "wiki": "Alphabet_Inc.",
+  "color": "#8eb1e8",
+  "tracked": true,
+  "profile": {
+    "title": "Alphabet Inc.",
+    "description": "American international technology conglomerate",
+    "summary": "Alphabet Inc. is an American multinational technology conglomerate holding company headquartered in Mountain View, California. It was created through a restructuring of Google on October 2, 2015, and became the parent holding company of Google and several former Google subsidiaries. Alphabet is listed on the large-cap section of the Nasdaq under the ticker symbols GOOGL and GOOG; both classes of stock are components of major stock market indices such as the S&P 500 and Nasdaq-100. Alphabet has been described as a Big Tech company. As of July 2026, it is the third largest publicly traded company in the world by market capitalization.",
+    "source_url": "https://en.wikipedia.org/wiki/Alphabet_Inc.",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Alphabet_Inc.",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 182527000000,
+      "net_income": 40269000000,
+      "net_margin": 22.061941520980458,
+      "filed": "2023-02-03",
+      "accession": "0001652044-23-000016",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 257637000000,
+      "net_income": 76033000000,
+      "net_margin": 29.511677282377917,
+      "filed": "2024-01-31",
+      "accession": "0001652044-24-000022",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 282836000000,
+      "net_income": 59972000000,
+      "net_margin": 21.203807153261963,
+      "filed": "2025-02-05",
+      "accession": "0001652044-25-000014",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 307394000000,
+      "net_income": 73795000000,
+      "net_margin": 24.006649446638516,
+      "filed": "2025-02-05",
+      "accession": "0001652044-25-000014",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 350018000000,
+      "net_income": 100118000000,
+      "net_margin": 28.603671811164,
+      "filed": "2025-02-05",
+      "accession": "0001652044-25-000014",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 402836000000,
+      "net_income": 132170000000,
+      "net_margin": 32.80987796522654,
+      "filed": "2026-02-05",
+      "accession": "0001652044-26-000018",
+      "concept": "Revenues"
+    }
+  ],
+  "metrics": {
+    "revenue": 402836000000,
+    "net_income": 132170000000,
+    "net_margin": 32.80987796522654,
+    "revenue_growth": 15.090081081544371,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:35:43.592165+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json",
+  "financial_fetched_at": "2026-11-17T03:35:43.592165+00:00",
+  "profile_fetched_at": "2026-11-17T03:35:43.592165+00:00"
+}

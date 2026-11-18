@@ -1,0 +1,100 @@
+{
+  "ticker": "NFLX",
+  "name": "Netflix",
+  "sector": "Entertainment",
+  "cik": "0001065280",
+  "wiki": "Netflix",
+  "color": "#e58f96",
+  "tracked": true,
+  "profile": {
+    "title": "Netflix",
+    "description": "American video streaming service",
+    "summary": "Netflix is an American subscription video on-demand over-the-top streaming media service. The service primarily distributes original and acquired films and television shows from various genres. It is available internationally in multiple languages.",
+    "source_url": "https://en.wikipedia.org/wiki/Netflix",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Netflix",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 24996056000,
+      "net_income": 2761395000,
+      "net_margin": 11.047322825648974,
+      "filed": "2023-01-26",
+      "accession": "0001065280-23-000035",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 29697844000,
+      "net_income": 5116228000,
+      "net_margin": 17.227607499049427,
+      "filed": "2024-01-26",
+      "accession": "0001065280-24-000030",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 31615550000,
+      "net_income": 4491924000,
+      "net_margin": 14.207957792921523,
+      "filed": "2025-01-27",
+      "accession": "0001065280-25-000044",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 33723297000,
+      "net_income": 5407990000,
+      "net_margin": 16.036362043723067,
+      "filed": "2026-01-23",
+      "accession": "0001065280-26-000034",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 39000966000,
+      "net_income": 8711631000,
+      "net_margin": 22.336962115246067,
+      "filed": "2026-01-23",
+      "accession": "0001065280-26-000034",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 45183036000,
+      "net_income": 10981201000,
+      "net_margin": 24.30381393583202,
+      "filed": "2026-01-23",
+      "accession": "0001065280-26-000034",
+      "concept": "Revenues"
+    }
+  ],
+  "metrics": {
+    "revenue": 45183036000,
+    "net_income": 10981201000,
+    "net_margin": 24.30381393583202,
+    "revenue_growth": 15.851068919677536,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:35:35.118825+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001065280.json",
+  "financial_fetched_at": "2026-11-17T03:35:35.118825+00:00",
+  "profile_fetched_at": "2026-11-17T03:35:35.118825+00:00"
+}

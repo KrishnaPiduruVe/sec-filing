@@ -1,0 +1,100 @@
+{
+  "ticker": "LLY",
+  "name": "Eli Lilly",
+  "sector": "Healthcare",
+  "cik": "0000059478",
+  "wiki": "Eli_Lilly_and_Company",
+  "color": "#c49cdb",
+  "tracked": true,
+  "profile": {
+    "title": "Eli Lilly and Company",
+    "description": "American pharmaceutical company",
+    "summary": "Eli Lilly and Company, doing business as Lilly, is an American multinational pharmaceutical company headquartered in Indianapolis, Indiana, with offices in 36 countries. Its products are marketed in approximately 90 countries. The company was founded in 1876 by Eli Lilly, a pharmaceutical chemist and Union army veteran during the American Civil War for whom the company was later named.",
+    "source_url": "https://en.wikipedia.org/wiki/Eli_Lilly_and_Company",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Eli_Lilly_and_Company",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 24539800000,
+      "net_income": 6193700000,
+      "net_margin": 25.239407004132065,
+      "filed": "2023-02-22",
+      "accession": "0000059478-23-000082",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 28318400000,
+      "net_income": 5581700000,
+      "net_margin": 19.71050624329058,
+      "filed": "2024-02-21",
+      "accession": "0000059478-24-000065",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 28541400000,
+      "net_income": 6244800000,
+      "net_margin": 21.879795665244174,
+      "filed": "2025-02-19",
+      "accession": "0000059478-25-000067",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 34124000000,
+      "net_income": 5240000000,
+      "net_margin": 15.355761340991677,
+      "filed": "2026-02-12",
+      "accession": "0000059478-26-000013",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 45043000000,
+      "net_income": 10590000000,
+      "net_margin": 23.51086739337966,
+      "filed": "2026-02-12",
+      "accession": "0000059478-26-000013",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 65179000000,
+      "net_income": 20640000000,
+      "net_margin": 31.666641096058544,
+      "filed": "2026-02-12",
+      "accession": "0000059478-26-000013",
+      "concept": "Revenues"
+    }
+  ],
+  "metrics": {
+    "revenue": 65179000000,
+    "net_income": 20640000000,
+    "net_margin": 31.666641096058544,
+    "revenue_growth": 44.70394955930998,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:35:31.278151+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000059478.json",
+  "financial_fetched_at": "2026-11-17T03:35:31.278151+00:00",
+  "profile_fetched_at": "2026-11-17T03:35:31.278151+00:00"
+}

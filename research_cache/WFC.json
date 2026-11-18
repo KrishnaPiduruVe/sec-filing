@@ -1,0 +1,101 @@
+{
+  "ticker": "WFC",
+  "name": "Wells Fargo",
+  "sector": "Financial services",
+  "cik": "0000072971",
+  "wiki": "Wells_Fargo",
+  "color": "#e5b57c",
+  "profile": {
+    "title": "Wells Fargo",
+    "description": "American multinational banking and financial services company",
+    "summary": "Wells Fargo & Company is an American multinational financial services company. The company operates in 35 countries and serves more than 70 million customers worldwide. It is a systemically important financial institution according to the Financial Stability Board, and is considered one of the Big Four banks in the United States, alongside JPMorgan Chase, Bank of America, and Citigroup.",
+    "source_url": "https://en.wikipedia.org/wiki/Wells_Fargo",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Wells_Fargo",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 74264000000,
+      "net_income": 3377000000,
+      "net_margin": 4.547290746525907,
+      "filed": "2023-02-21",
+      "accession": "0000072971-23-000071",
+      "concept": "RevenuesNetOfInterestExpense"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 79166000000,
+      "net_income": 22109000000,
+      "net_margin": 27.92739307278377,
+      "filed": "2024-02-20",
+      "accession": "0000072971-24-000064",
+      "concept": "RevenuesNetOfInterestExpense"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 74368000000,
+      "net_income": 13677000000,
+      "net_margin": 18.39097461273666,
+      "filed": "2025-02-25",
+      "accession": "0000072971-25-000066",
+      "concept": "RevenuesNetOfInterestExpense"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 82597000000,
+      "net_income": 19142000000,
+      "net_margin": 23.17517585384457,
+      "filed": "2026-02-24",
+      "accession": "0000072971-26-000133",
+      "concept": "RevenuesNetOfInterestExpense"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 82296000000,
+      "net_income": 19722000000,
+      "net_margin": 23.964712744240305,
+      "filed": "2026-02-24",
+      "accession": "0000072971-26-000133",
+      "concept": "RevenuesNetOfInterestExpense"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 83699000000,
+      "net_income": 21338000000,
+      "net_margin": 25.493733497413352,
+      "filed": "2026-02-24",
+      "accession": "0000072971-26-000133",
+      "concept": "RevenuesNetOfInterestExpense"
+    }
+  ],
+  "metrics": {
+    "revenue": 83699000000,
+    "net_income": 21338000000,
+    "net_margin": 25.493733497413352,
+    "revenue_growth": 1.7048216195197918,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Net of interest expense"
+  },
+  "warnings": [
+    "This financial institution reports revenue net of interest expense. Use care when comparing it with non-financial companies."
+  ],
+  "fetched_at": "2026-11-17T04:22:40.304166+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000072971.json",
+  "financial_fetched_at": "2026-11-17T04:22:40.304166+00:00",
+  "profile_fetched_at": "2026-11-17T04:22:40.304166+00:00"
+}

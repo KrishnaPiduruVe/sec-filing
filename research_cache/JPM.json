@@ -1,0 +1,100 @@
+{
+  "ticker": "JPM",
+  "name": "JPMorgan Chase",
+  "sector": "Financial services",
+  "cik": "0000019617",
+  "wiki": "JPMorgan_Chase",
+  "color": "#aa9bf0",
+  "tracked": true,
+  "profile": {
+    "title": "JPMorgan Chase",
+    "description": "American multinational banking institution",
+    "summary": "JPMorgan Chase & Co. is an American multinational banking institution headquartered in New York City and incorporated in Delaware. It is the largest bank in the United States, and the world's largest bank by market capitalization as of 2026. As the largest of the Big Four banks in America, the firm is considered systemically important by the Financial Stability Board. Its size and scale have often led to enhanced regulatory oversight as well as the development of an internal \"Fortress Balance Sheet\".",
+    "source_url": "https://en.wikipedia.org/wiki/JPMorgan_Chase",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/JPMorgan_Chase",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 119951000000,
+      "net_income": 29131000000,
+      "net_margin": 24.28575001458929,
+      "filed": "2023-02-21",
+      "accession": "0000019617-23-000231",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 121649000000,
+      "net_income": 48334000000,
+      "net_margin": 39.73234469662718,
+      "filed": "2024-02-16",
+      "accession": "0000019617-24-000225",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 128695000000,
+      "net_income": 37676000000,
+      "net_margin": 29.275418625432227,
+      "filed": "2025-02-14",
+      "accession": "0000019617-25-000270",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 158104000000,
+      "net_income": 49552000000,
+      "net_margin": 31.341395537114806,
+      "filed": "2026-02-13",
+      "accession": "0001628280-26-008131",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 177556000000,
+      "net_income": 58471000000,
+      "net_margin": 32.9310189461353,
+      "filed": "2026-02-13",
+      "accession": "0001628280-26-008131",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 182447000000,
+      "net_income": 57048000000,
+      "net_margin": 31.268258727192006,
+      "filed": "2026-02-13",
+      "accession": "0001628280-26-008131",
+      "concept": "Revenues"
+    }
+  ],
+  "metrics": {
+    "revenue": 182447000000,
+    "net_income": 57048000000,
+    "net_margin": 31.268258727192006,
+    "revenue_growth": 2.7546238933068956,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:35:39.035683+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000019617.json",
+  "financial_fetched_at": "2026-11-17T03:35:39.035683+00:00",
+  "profile_fetched_at": "2026-11-17T03:35:39.035683+00:00"
+}

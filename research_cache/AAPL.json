@@ -1,0 +1,99 @@
+{
+  "ticker": "AAPL",
+  "name": "Apple",
+  "sector": "Technology",
+  "cik": "0000320193",
+  "wiki": "Apple_Inc.",
+  "color": "#a8b7cf",
+  "profile": {
+    "title": "Apple Inc.",
+    "description": "American multinational technology company",
+    "summary": "Apple Inc. is an American multinational technology company headquartered in Cupertino, California, in Silicon Valley, and known for consumer electronics, software and online services. Founded in 1976 as Apple Computer Company by Steve Jobs, Steve Wozniak and Ronald Wayne, the company was incorporated by Jobs and Wozniak as Apple Computer, Inc. the following year. Its current name was adopted in 2007 as the company expanded its focus from computers to consumer electronics. Apple is one of the Big Tech companies.",
+    "source_url": "https://en.wikipedia.org/wiki/Apple_Inc.",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Apple_Inc.",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2021",
+      "start": "2020-09-27",
+      "end": "2021-09-25",
+      "revenue": 365817000000,
+      "net_income": 94680000000,
+      "net_margin": 25.88179335569424,
+      "filed": "2023-11-03",
+      "accession": "0000320193-23-000106",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2021-09-26",
+      "end": "2022-09-24",
+      "revenue": 394328000000,
+      "net_income": 99803000000,
+      "net_margin": 25.309640705199733,
+      "filed": "2024-11-01",
+      "accession": "0000320193-24-000123",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2022-09-25",
+      "end": "2023-09-30",
+      "revenue": 383285000000,
+      "net_income": 96995000000,
+      "net_margin": 25.30623426432028,
+      "filed": "2025-10-31",
+      "accession": "0000320193-25-000079",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2024",
+      "start": "2023-10-01",
+      "end": "2024-09-28",
+      "revenue": 391035000000,
+      "net_income": 93736000000,
+      "net_margin": 23.971255769943866,
+      "filed": "2026-11-03",
+      "accession": "0000320193-26-000026",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2025",
+      "start": "2024-09-29",
+      "end": "2025-09-27",
+      "revenue": 416161000000,
+      "net_income": 112010000000,
+      "net_margin": 26.91506412181824,
+      "filed": "2026-11-03",
+      "accession": "0000320193-26-000026",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2026",
+      "start": "2025-09-28",
+      "end": "2026-09-26",
+      "revenue": 478834000000,
+      "net_income": 132175000000,
+      "net_margin": 27.603511864236875,
+      "filed": "2026-11-03",
+      "accession": "0000320193-26-000026",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    }
+  ],
+  "metrics": {
+    "revenue": 478834000000,
+    "net_income": 132175000000,
+    "net_margin": 27.603511864236875,
+    "revenue_growth": 15.05979656911629,
+    "period_end": "2026-09-26",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T04:22:04.624261+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",
+  "financial_fetched_at": "2026-11-17T04:22:04.624261+00:00",
+  "profile_fetched_at": "2026-11-17T04:22:04.624261+00:00"
+}

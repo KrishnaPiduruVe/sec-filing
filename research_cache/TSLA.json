@@ -1,0 +1,100 @@
+{
+  "ticker": "TSLA",
+  "name": "Tesla",
+  "sector": "Automotive",
+  "cik": "0001318605",
+  "wiki": "Tesla,_Inc.",
+  "color": "#e89193",
+  "tracked": true,
+  "profile": {
+    "title": "Tesla, Inc.",
+    "description": "American electric vehicle and clean energy company",
+    "summary": "Tesla, Inc. is an American multinational automotive and clean energy company. Headquartered in Austin, Texas, it designs, manufactures, and sells battery electric vehicles (BEVs), stationary battery energy storage devices from home to grid-scale, solar panels, and related products and services.",
+    "source_url": "https://en.wikipedia.org/wiki/Tesla%2C_Inc.",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Tesla%2C_Inc.",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 31536000000,
+      "net_income": 721000000,
+      "net_margin": 2.2862760020294264,
+      "filed": "2023-01-31",
+      "accession": "0000950170-23-001409",
+      "concept": "Revenues"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 53823000000,
+      "net_income": 5519000000,
+      "net_margin": 10.253980640246734,
+      "filed": "2024-01-29",
+      "accession": "0001628280-24-002390",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 81462000000,
+      "net_income": 12556000000,
+      "net_margin": 15.413321548697553,
+      "filed": "2025-01-30",
+      "accession": "0001628280-25-003063",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 96773000000,
+      "net_income": 14997000000,
+      "net_margin": 15.497091130790613,
+      "filed": "2026-01-29",
+      "accession": "0001628280-26-003952",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 97690000000,
+      "net_income": 7091000000,
+      "net_margin": 7.2586754017811455,
+      "filed": "2026-01-29",
+      "accession": "0001628280-26-003952",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 94827000000,
+      "net_income": 3794000000,
+      "net_margin": 4.000970187815707,
+      "filed": "2026-01-29",
+      "accession": "0001628280-26-003952",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    }
+  ],
+  "metrics": {
+    "revenue": 94827000000,
+    "net_income": 3794000000,
+    "net_margin": 4.000970187815707,
+    "revenue_growth": -2.930699150373628,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:02:56.423062+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001318605.json",
+  "financial_fetched_at": "2026-11-17T03:02:56.423062+00:00",
+  "profile_fetched_at": "2026-11-17T03:02:56.423062+00:00"
+}

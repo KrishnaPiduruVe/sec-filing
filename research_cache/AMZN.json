@@ -1,0 +1,100 @@
+{
+  "ticker": "AMZN",
+  "name": "Amazon",
+  "sector": "Consumer & cloud",
+  "cik": "0001018724",
+  "wiki": "Amazon_(company)",
+  "color": "#f5bd68",
+  "tracked": true,
+  "profile": {
+    "title": "Amazon (company)",
+    "description": "American multinational technology conglomerate",
+    "summary": "Amazon.com, Inc. is an American multinational conglomerate engaged in e-commerce, retail, cloud computing, online advertising, digital streaming, entertainment, supermarkets, and artificial intelligence. Founded in 1994 by Jeff Bezos in Bellevue, Washington, the company started as an online book marketplace that gradually expanded to include virtually all consumer products as well as many other categories, positioned as \"The Everything Store\".",
+    "source_url": "https://en.wikipedia.org/wiki/Amazon_(company)",
+    "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/Amazon_%28company%29",
+    "matched_by_search": false,
+    "license": "Wikipedia text: CC BY-SA; see linked article history and license."
+  },
+  "history": [
+    {
+      "year": "2020",
+      "start": "2020-01-01",
+      "end": "2020-12-31",
+      "revenue": 386064000000,
+      "net_income": 21331000000,
+      "net_margin": 5.525249699531684,
+      "filed": "2023-02-03",
+      "accession": "0001018724-23-000004",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2021",
+      "start": "2021-01-01",
+      "end": "2021-12-31",
+      "revenue": 469822000000,
+      "net_income": 33364000000,
+      "net_margin": 7.101412875514557,
+      "filed": "2024-02-02",
+      "accession": "0001018724-24-000008",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2022",
+      "start": "2022-01-01",
+      "end": "2022-12-31",
+      "revenue": 513983000000,
+      "net_income": -2722000000,
+      "net_margin": -0.5295895000418301,
+      "filed": "2025-02-07",
+      "accession": "0001018724-25-000004",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2023",
+      "start": "2023-01-01",
+      "end": "2023-12-31",
+      "revenue": 574785000000,
+      "net_income": 30425000000,
+      "net_margin": 5.293283575597832,
+      "filed": "2026-02-06",
+      "accession": "0001018724-26-000004",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2024",
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "revenue": 637959000000,
+      "net_income": 59248000000,
+      "net_margin": 9.287117197186653,
+      "filed": "2026-02-06",
+      "accession": "0001018724-26-000004",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    },
+    {
+      "year": "2025",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "revenue": 716924000000,
+      "net_income": 77670000000,
+      "net_margin": 10.83378433418326,
+      "filed": "2026-02-06",
+      "accession": "0001018724-26-000004",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax"
+    }
+  ],
+  "metrics": {
+    "revenue": 716924000000,
+    "net_income": 77670000000,
+    "net_margin": 10.83378433418326,
+    "revenue_growth": 12.377754683294695,
+    "period_end": "2025-12-31",
+    "revenue_basis": "Reported revenue"
+  },
+  "warnings": [],
+  "fetched_at": "2026-11-17T03:41:05.762028+00:00",
+  "snapshot": false,
+  "financial_source": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
+  "financial_fetched_at": "2026-11-17T03:41:05.762028+00:00",
+  "profile_fetched_at": "2026-11-17T03:41:05.762028+00:00"
+}
