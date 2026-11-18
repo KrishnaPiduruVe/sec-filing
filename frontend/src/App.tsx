@@ -249,7 +249,9 @@ export default function App() {
       setJobConsole(`${stockLogPrefix}${formatJobConsole("Stock data indexing", stockResult)}`);
       setTickerInput("");
       await refreshCompanies(ticker);
-      setAddStatus(`${ticker} is ready for research.`);
+      setAddStatus(filingResult.steps?.download?.status === "skipped"
+        ? `${ticker} market data is ready. No company 10-Q is available.`
+        : `${ticker} is ready for research.`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to add this company.";
       if (cancelRequestedRef.current) {
@@ -315,7 +317,10 @@ export default function App() {
         ? [...items, { ...answer, usageJobId: job.id }]
         : items);
     } catch (error) {
-      setChatError(error instanceof Error ? error.message : "The question could not be answered.");
+      const message = error instanceof Error ? error.message : "";
+      setChatError(message && !message.includes("Traceback (most recent call last):")
+        ? message
+        : "The question could not be answered. Try asking again.");
     } finally {
       setChatBusy(false);
     }

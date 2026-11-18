@@ -573,3 +573,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
   .overview-card { padding: 16px; }
   .annual-metric { gap: 8px; }
 }
+
+.assistant-chart-area { fill: #55d19e35; }
+.assistant-pie { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.assistant-pie svg { flex: 0 1 170px; min-width: 0; }
+.assistant-doughnut-hole { fill: #152129; }
+.assistant-pie-legend { flex: 1 1 110px; min-width: 0; margin: 0; padding: 0; list-style: none; font: 11px/1.45 var(--sans); }
+.assistant-pie-legend li { display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; align-items: baseline; gap: 6px; }
+.assistant-pie-swatch { width: 8px; height: 8px; border-radius: 2px; }
+:root[data-theme="light"] .assistant-doughnut-hole { fill: #f7faf8; }

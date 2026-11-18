@@ -75,17 +75,22 @@ def _prepare(
         print(f"We already have downloaded information for {', '.join(cached)}. Reusing it and checking the indexes.", flush=True)
     event('download', 'running', 'Downloading missing filings' if missing else 'Checking saved filings')
     if missing:
-        run_script('corporate_atlas.core.sec_quarterly_filings', *missing)
+        run_script('corporate_atlas.core.sec_quarterly_filings', '--skip-unavailable', *missing)
+    available = [ticker for ticker in tickers if html_files(ticker)]
+    if not available:
+        event('download', 'skipped', 'No company 10-Q available')
+        event('vector', 'skipped', 'No filings to index')
+        return
     event('download', 'completed', 'Filings downloaded' if missing else 'Already downloaded — reused saved filings')
 
     event('vector', 'running', 'Checking saved vectors')
-    missing_vectors = [t for t in tickers if not vector_complete(t)]
+    missing_vectors = [t for t in available if not vector_complete(t)]
     if missing_vectors:
         event('vector', 'running', 'Embedding filing chunks in paced batches')
         run_script('corporate_atlas.core.build_vector_store_paced', '--tickers', *missing_vectors,
                    '--batch-size', str(batch_size), '--batch-delay', str(batch_delay))
     event('vector', 'completed', 'Vector store ready' if missing_vectors else 'Vectors already available')
-    for ticker in tickers:
+    for ticker in available:
         try:
             index_company_profile(ticker, ROOT / SETTINGS.paths.filings_dir, ROOT / SETTINGS.paths.vector_dir)
         except InterruptedError:

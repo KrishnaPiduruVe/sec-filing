@@ -23,6 +23,10 @@ ACCESSION_PATTERN = re.compile(r"^\d{10}-\d{2}-\d{6}$")
 EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
 
 
+class QuarterlyFilingUnavailable(LookupError):
+    """The SEC ticker listing or submissions contain no matching 10-Q."""
+
+
 def sec_user_agent() -> str:
     """Return a descriptive SEC User-Agent with a real contact email."""
     load_dotenv(ENV_FILE, override=False)
@@ -106,7 +110,7 @@ def latest_10q(recent_filings: dict[str, Any]) -> dict[str, str]:
         if values[0] == "10-Q"
     ]
     if not rows:
-        raise LookupError("No 10-Q filing was found in the SEC submissions data.")
+        raise QuarterlyFilingUnavailable("No 10-Q filing was found in the SEC submissions data.")
     rows.sort(key=lambda row: row["filingDate"], reverse=True)
     filing = rows[0]
     if not filing["accessionNumber"] or not filing["primaryDocument"]:
@@ -170,7 +174,7 @@ def fetch_ticker(
     try:
         cik = ticker_map[normalized_ticker]
     except KeyError as exc:
-        raise LookupError(f"Ticker {normalized_ticker!r} was not found by the SEC.") from exc
+        raise QuarterlyFilingUnavailable(f"Ticker {normalized_ticker!r} was not found in the SEC company ticker list.") from exc
 
     submissions_path = SETTINGS.sec.submissions_path.format(cik=cik)
     submissions = get_json(client, f"{SEC_DATA}{submissions_path}")
@@ -201,6 +205,8 @@ def fetch_ticker(
 def fetch_filings(
     tickers: tuple[str, ...] | list[str] = DEFAULT_TICKERS,
     output_dir: Path = DATA_ROOT / SETTINGS.paths.filings_dir,
+    *,
+    skip_unavailable: bool = False,
 ) -> list[Path]:
     client = SecClient()
     company_tickers = get_json(
@@ -208,7 +214,15 @@ def fetch_filings(
         f"{SEC_WWW}{SETTINGS.sec.company_tickers_path}",
     )
     mapping = ticker_cik_map(company_tickers)
-    return [fetch_ticker(ticker, client, mapping, output_dir) for ticker in tickers]
+    paths = []
+    for ticker in tickers:
+        try:
+            paths.append(fetch_ticker(ticker, client, mapping, output_dir))
+        except QuarterlyFilingUnavailable as exc:
+            if not skip_unavailable:
+                raise
+            print(f"Skipping SEC 10-Q for {ticker.upper()}: {exc}", flush=True)
+    return paths
 
 
 def main() -> None:
@@ -228,8 +242,10 @@ def main() -> None:
         type=Path,
         default=DATA_ROOT / SETTINGS.paths.filings_dir,
     )
+    parser.add_argument("--skip-unavailable", action="store_true",
+                        help="Skip tickers without a matching company 10-Q.")
     args = parser.parse_args()
-    for filing_dir in fetch_filings(args.tickers, args.output_dir):
+    for filing_dir in fetch_filings(args.tickers, args.output_dir, skip_unavailable=args.skip_unavailable):
         print(f"Saved filing to {filing_dir}")
 
 

@@ -22,9 +22,16 @@ class WorkflowTests(unittest.TestCase):
                 run.assert_not_called()
 
     def test_missing_artifacts_run_in_order(self):
-        with patch.object(workflow, 'html_files', return_value=[]), patch.object(workflow, 'vector_complete', return_value=False), patch.object(workflow, 'ROOT', Path('/nonexistent/workflow-test')), patch.object(workflow, 'run_script') as run:
+        with patch.object(workflow, 'html_files', side_effect=[[], [Path('downloaded.htm')]]), patch.object(workflow, 'vector_complete', return_value=False), patch.object(workflow, 'ROOT', Path('/nonexistent/workflow-test')), patch.object(workflow, 'run_script') as run:
             workflow.prepare(['AAPL'])
             self.assertEqual([c.args[0] for c in run.call_args_list], ['corporate_atlas.core.sec_quarterly_filings', 'corporate_atlas.core.build_vector_store_paced'])
+
+    def test_ticker_without_10q_skips_filing_index(self):
+        with patch.object(workflow, 'html_files', return_value=[]), patch.object(workflow, 'run_script') as run, patch.object(workflow, 'event') as progress:
+            workflow.prepare(['SOXX'])
+        run.assert_called_once_with('corporate_atlas.core.sec_quarterly_filings', '--skip-unavailable', 'SOXX')
+        progress.assert_any_call('download', 'skipped', 'No company 10-Q available')
+        progress.assert_any_call('vector', 'skipped', 'No filings to index')
 
     def test_failure_stops_following_stages(self):
         with patch.object(workflow, 'html_files', return_value=[]), patch.object(workflow, 'run_script', side_effect=RuntimeError('download failed')) as run:
